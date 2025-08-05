@@ -97,7 +97,22 @@
                 // Agregar el día
                 this.formData.dias_juego.push(diaNum);
             }
-        }
+        },
+        // Función para convertir formato 24h a 12h AM/PM
+        convertTo12HourFormat(time24) {
+            if (!time24) return '';
+            
+            // Extraer horas y minutos
+            const [hours, minutes] = time24.split(':');
+            let hour = parseInt(hours, 10);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            
+            // Convertir a formato 12h
+            hour = hour % 12;
+            hour = hour ? hour : 12; // la hora 0 se convierte en 12 AM
+            
+            return hour + ':' + minutes + ' ' + ampm;
+        },
     }">
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -325,17 +340,19 @@
                                             <div class="flex items-center justify-center w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-full">
                                                 <span class="text-sm font-bold text-primary-700 dark:text-primary-300" x-text="dia.corto"></span>
                                             </div>
-                                            <div>
-                                                <h4 class="font-medium text-gray-900 dark:text-white" x-text="dia.completo"></h4>
-                                                <p class="text-sm text-gray-500 dark:text-gray-400">
-                                                    <span x-show="!tieneHorarioEspecifico(dia.numero)">
-                                                        Usando horario general: <span x-text="formData.horario_inicio + ' - ' + formData.horario_fin"></span>
-                                                    </span>
-                                                    <span x-show="tieneHorarioEspecifico(dia.numero)" class="text-primary-600 dark:text-primary-400">
-                                                        Horario específico
-                                                    </span>
-                                                </p>
-                                            </div>
+                                                <div>
+                                                    <h4 class="font-medium text-gray-900 dark:text-white" x-text="dia.completo"></h4>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                                        <span x-show="!tieneHorarioEspecifico(dia.numero)">
+                                                            Usando horario general: 
+                                                            <span x-text="convertTo12HourFormat(formData.horario_inicio) + ' - ' + convertTo12HourFormat(formData.horario_fin)"></span>
+                                                        </span>
+                                                        <span x-show="tieneHorarioEspecifico(dia.numero)" class="text-primary-600 dark:text-primary-400">
+                                                            Horario específico: 
+                                                            <span x-text="convertTo12HourFormat(getDiaHorarioInicio(dia.numero)) + ' - ' + convertTo12HourFormat(getDiaHorarioFin(dia.numero))"></span>
+                                                        </span>
+                                                    </p>
+                                                </div>
                                         </div>
                                         
                                         <!-- Toggle para horario específico -->
