@@ -1,0 +1,10 @@
+@echo off
+echo Limpiando cachés de Laravel...
+php artisan optimize:clear
+php artisan config:clear
+php artisan cache:clear
+php artisan view:clear
+php artisan route:clear
+php artisan event:clear
+echo Cachés limpiados exitosamente!
+pause

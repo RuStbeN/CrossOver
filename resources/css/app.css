@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  
+  .glass-effect {
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    background-color: rgba(69, 69, 69, 0.4);
+    border: 1px solid rgba(255, 107, 53, 0.25);
+  }
+
+  .glass-effect-light {
+    backdrop-filter: blur(8px) saturate(160%);
+    -webkit-backdrop-filter: blur(8px) saturate(160%);
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 107, 53, 0.1);
+  }
+
+
+  .glass-effect-dark {
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    background-color: rgba(69, 69, 69, 0.4);
+    border: 1px solid rgba(255, 107, 53, 0.25);
+  }
+  
+  
+}
