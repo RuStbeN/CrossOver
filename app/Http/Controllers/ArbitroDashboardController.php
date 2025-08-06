@@ -1348,16 +1348,6 @@ class ArbitroDashboardController extends Controller
                         ], 400);
                     }
 
-                    // CORRECCIÓN: Actualizar tiempo_restante ANTES de cambiar el estado
-                    if ($juego->estado_tiempo !== 'corriendo') {
-                        // Calcular tiempo actual si estaba pausado
-                        $segundosTranscurridos = $ahora->diffInSeconds($juego->ultimo_cambio_tiempo);
-                        if ($juego->estado_tiempo === 'pausado') {
-                            // No restar tiempo adicional si ya estaba pausado
-                            // El tiempo ya fue calculado cuando se pausó
-                        }
-                    }
-
                     $juego->estado_tiempo = 'corriendo';
                     $juego->ultimo_cambio_tiempo = $ahora;
                     break;
@@ -1370,8 +1360,15 @@ class ArbitroDashboardController extends Controller
                         ], 400);
                     }
 
-                    // CORRECCIÓN: Calcular tiempo restante correctamente
-                    $segundosTranscurridos = $ahora->diffInSeconds($juego->ultimo_cambio_tiempo);
+                    // CORRECCIÓN: Calcular tiempo restante con mayor precisión
+                    $tiempoInicio = \Carbon\Carbon::parse($juego->ultimo_cambio_tiempo);
+                    $segundosTranscurridos = $tiempoInicio->diffInSeconds($ahora);
+                    
+                    // IMPORTANTE: Limitar a máximo 1 segundo de delay para evitar tiempo extra
+                    if ($segundosTranscurridos > ($juego->tiempo_restante + 1)) {
+                        $segundosTranscurridos = $juego->tiempo_restante;
+                    }
+                    
                     $nuevoTiempoRestante = max(0, (int)($juego->tiempo_restante - $segundosTranscurridos));
                     
                     $juego->tiempo_restante = $nuevoTiempoRestante;
@@ -1412,8 +1409,6 @@ class ArbitroDashboardController extends Controller
                         $juego->tiempo_restante = $duracionCuarto;
                         $juego->estado_tiempo = 'pausado';
                         
-                        // CAMBIO: Remover finalización automática
-                        // NO finalizar automáticamente, solo avanzar hasta cuarto 4
                         if ($juego->cuarto_actual > 4) {
                             $juego->cuarto_actual = 4; // Mantener en 4 máximo
                         }
@@ -1437,12 +1432,8 @@ class ArbitroDashboardController extends Controller
 
             $juego->save();
 
-            // Calcular tiempo actual para la respuesta
+            // Calcular tiempo actual para la respuesta (sin delay adicional)
             $tiempoParaRespuesta = $juego->tiempo_restante;
-            if ($juego->estado_tiempo === 'corriendo') {
-                // Si acabamos de iniciar, el tiempo es exactamente el que está en BD
-                $tiempoParaRespuesta = $juego->tiempo_restante;
-            }
 
             // Determinar el estado para la respuesta
             $estadoRespuesta = $juego->estado_tiempo;
@@ -1450,13 +1441,9 @@ class ArbitroDashboardController extends Controller
                 $estadoRespuesta = 'descanso';
             }
 
-            // NUEVO: Determinar si se puede finalizar el partido
+            // Determinar si se puede finalizar el partido
             $puedeFinalizarPartido = false;
             
-            // Lógica para mostrar el botón de finalizar:
-            // - Debe estar en cuarto 4
-            // - No debe estar en descanso
-            // - El tiempo debe estar pausado o agotado
             if ($juego->cuarto_actual >= 4 && 
                 !$juego->en_descanso && 
                 $juego->estado_tiempo !== 'corriendo' &&
@@ -1471,7 +1458,7 @@ class ArbitroDashboardController extends Controller
                 'tiempo_restante' => (int)$tiempoParaRespuesta,
                 'estado_partido' => $juego->estado,
                 'en_descanso' => $juego->en_descanso,
-                'puede_finalizar' => $puedeFinalizarPartido  // NUEVO CAMPO
+                'puede_finalizar' => $puedeFinalizarPartido
             ]);
 
         } catch (\Exception $e) {
@@ -1489,12 +1476,8 @@ class ArbitroDashboardController extends Controller
         try {
             $juego = \App\Models\Juego::findOrFail($juegoId);
             
-            // CORRECCIÓN: Calcular tiempo actual correctamente
-            $tiempoRestante = $juego->tiempo_restante;
-            if ($juego->estado_tiempo === 'corriendo' && $juego->ultimo_cambio_tiempo) {
-                $segundosTranscurridos = now()->diffInSeconds($juego->ultimo_cambio_tiempo);
-                $tiempoRestante = max(0, (int)($juego->tiempo_restante - $segundosTranscurridos));
-            }
+            // CORRECCIÓN: Usar método del modelo para mayor precisión
+            $tiempoRestante = $juego->getTiempoActual();
 
             // Determinar estado para respuesta
             $estadoRespuesta = $juego->estado_tiempo;
@@ -1502,7 +1485,7 @@ class ArbitroDashboardController extends Controller
                 $estadoRespuesta = 'descanso';
             }
 
-            // NUEVO: Determinar si se puede finalizar el partido
+            // Determinar si se puede finalizar el partido
             $puedeFinalizarPartido = false;
             
             if ($juego->cuarto_actual >= 4 && 
@@ -1519,7 +1502,7 @@ class ArbitroDashboardController extends Controller
                 'tiempo_restante' => (int)$tiempoRestante,
                 'estado_partido' => $juego->estado,
                 'en_descanso' => $juego->en_descanso,
-                'puede_finalizar' => $puedeFinalizarPartido  // NUEVO CAMPO
+                'puede_finalizar' => $puedeFinalizarPartido
             ]);
 
         } catch (\Exception $e) {

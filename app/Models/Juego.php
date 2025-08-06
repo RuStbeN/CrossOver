@@ -205,10 +205,22 @@ class Juego extends Model
     public function getTiempoActual()
     {
         if ($this->estado_tiempo === 'corriendo' && $this->ultimo_cambio_tiempo) {
-            $segundosTranscurridos = now()->diffInSeconds($this->ultimo_cambio_tiempo);
-            return max(0, $this->tiempo_restante - $segundosTranscurridos);
+            $tiempoInicio = \Carbon\Carbon::parse($this->ultimo_cambio_tiempo);
+            $ahora = now();
+            
+            // Calcular segundos transcurridos con mayor precisión
+            $segundosTranscurridos = $tiempoInicio->diffInSeconds($ahora);
+            
+            // CORRECCIÓN: Limitar delay máximo a 2 segundos para evitar inconsistencias
+            if ($segundosTranscurridos > ($this->tiempo_restante + 2)) {
+                $segundosTranscurridos = $this->tiempo_restante;
+            }
+            
+            $tiempoCalculado = $this->tiempo_restante - $segundosTranscurridos;
+            
+            return max(0, (int)$tiempoCalculado);
         }
         
-        return $this->tiempo_restante;
+        return (int)$this->tiempo_restante;
     }
 }
