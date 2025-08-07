@@ -26,15 +26,6 @@ class AdminController extends Controller
             'ultimos_jugadores' => Jugador::latest()->take(5)->get()
         ];
 
-        // Obtener juegos en vivo
-        $juegosEnVivo = Juego::with(['equipoLocal', 'equipoVisitante', 'cancha', 'torneo'])
-            ->where('estado', 'En Curso')
-            ->where('activo', true)
-            ->orderBy('fecha', 'desc')
-            ->orderBy('hora', 'desc')
-            ->take(3)
-            ->get();
-
         // Obtener próximos partidos
         $proximosPartidos = Juego::with(['equipoLocal', 'equipoVisitante', 'cancha', 'torneo'])
             ->where('estado', 'Programado')
@@ -45,8 +36,17 @@ class AdminController extends Controller
             ->take(3)
             ->get();
 
+        // Obtener juegos en vivo
+        $juegosEnVivo = Juego::with(['equipoLocal', 'equipoVisitante', 'cancha', 'torneo'])
+            ->where('estado', 'En Curso')
+            ->where('activo', true)
+            ->orderBy('fecha', 'desc')
+            ->orderBy('hora', 'desc')
+            ->take(3)
+            ->get();
+
         // Obtener resultados recientes
-        $resultadosRecientes = Juego::with(['equipoLocal', 'equipoVisitante', 'torneo'])
+        $resultadosRecientes = Juego::with(['equipoLocal', 'equipoVisitante', 'cancha', 'torneo'])
             ->where('estado', 'Finalizado')
             ->orderBy('fecha', 'desc')
             ->orderBy('hora', 'desc')

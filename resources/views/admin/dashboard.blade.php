@@ -96,28 +96,28 @@
 
                     <!-- Próximos partidos -->
                     <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 dark:from-yellow-600 dark:to-yellow-700 rounded-xl shadow-lg overflow-hidden">
-                        <div class="px-6 py-4 border-b border-white/20">
-                            <h3 class="text-lg font-medium text-white">Próximos Partidos</h3>
+                        <div class="px-4 py-3 border-b border-white/20">
+                            <h3 class="text-md font-medium text-white">Próximos Partidos</h3>
                         </div>
-                        <div class="p-6">
+                        <div class="p-4">
                             @if($proximosPartidos->count() > 0)
-                                <div class="space-y-4">
-                                    @foreach($proximosPartidos->take(3) as $partido) 
-                                        <div class="flex justify-between items-center p-4 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-colors">
-                                            <div>
-                                                <h4 class="font-medium text-white">
-                                                    {{ $partido->equipoLocal ? $partido->equipoLocal->nombre : 'Desconocido' }}
-                                                    vs
-                                                    {{ $partido->equipoVisitante ? $partido->equipoVisitante->nombre : 'Desconocido' }}
-                                                </h4>
-                                                <p class="text-sm text-white/70">
-                                                    {{ $partido->fecha->format('d/m/Y') }} - {{ $partido->hora }}
+                                <div class="space-y-2">
+                                    @foreach($proximosPartidos->take(3) as $partido)
+                                        <div class="flex justify-between items-center p-2 bg-white/5 rounded hover:bg-white/10 transition-colors">
+                                            <div class="truncate">
+                                                <div class="flex items-center space-x-1">
+                                                    <span class="text-xs font-medium text-white/70">
+                                                        {{ $partido->fecha->format('d/m') }} {{ $partido->hora }}
+                                                    </span>
                                                     @if($partido->cancha)
-                                                        - {{ $partido->cancha->nombre }}
+                                                        <span class="text-xs text-white/50">• {{ $partido->cancha->nombre }}</span>
                                                     @endif
-                                                </p>
+                                                </div>
+                                                <h4 class="text-sm font-medium text-white truncate">
+                                                    {{ $partido->equipoLocal->nombre ?? 'Local' }} vs {{ $partido->equipoVisitante->nombre ?? 'Visitante' }}
+                                                </h4>
                                             </div>
-                                            <div class="text-right">
+                                            <div>
                                                 @php
                                                     $fechaPartido = \Carbon\Carbon::parse($partido->fecha->format('Y-m-d') . ' ' . $partido->hora);
                                                     $ahora = now();
@@ -129,28 +129,37 @@
                                                         $estado = 'Mañana';
                                                         $colorClass = 'bg-green-500/20 text-green-100';
                                                     } elseif ($fechaPartido->diffInDays($ahora) <= 7) {
-                                                        $estado = $fechaPartido->locale('es')->dayName;
+                                                        $estado = substr($fechaPartido->locale('es')->dayName, 0, 3);
                                                         $colorClass = 'bg-blue-500/20 text-blue-100';
                                                     } else {
-                                                        $estado = 'Programado';
+                                                        $estado = 'Próximo';
                                                         $colorClass = 'bg-white/20 text-white';
                                                     }
                                                 @endphp
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $colorClass }}">
-                                                    {{ $estado }}
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs {{ $colorClass }}">
+                                                    @php
+                                                        $fechaPartido = \Carbon\Carbon::parse($partido->fecha->format('Y-m-d') . ' ' . $partido->hora);
+                                                        $ahora = now();
+                                                        
+                                                        if ($fechaPartido->isToday()) {
+                                                            echo 'Hoy';
+                                                        } elseif ($fechaPartido->isTomorrow()) {
+                                                            echo 'Mañana';
+                                                        } elseif ($fechaPartido->diffInDays($ahora) <= 7) {
+                                                            // Usamos el formato 'D' para obtener el nombre corto del día sin tildes
+                                                            echo $fechaPartido->isoFormat('ddd'); // Esto mostrará "lun", "mar", etc.
+                                                        } else {
+                                                            echo 'Próximo';
+                                                        }
+                                                    @endphp
                                                 </span>
                                             </div>
                                         </div>
                                     @endforeach
                                 </div>
                             @else
-                                <div class="text-center py-8">
-                                    <div class="text-white/60 mb-2">
-                                        <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                        </svg>
-                                    </div>
-                                    <p class="text-white/70 text-sm">No hay partidos programados</p>
+                                <div class="text-center py-4">
+                                    <p class="text-white/70 text-xs">No hay partidos próximos</p>
                                 </div>
                             @endif
                         </div>
@@ -158,55 +167,59 @@
 
                     <!-- Juegos en vivo -->
                     <div class="bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 rounded-xl shadow-lg overflow-hidden">
-                        <div class="px-6 py-4 border-b border-white/20">
-                            <h3 class="text-lg font-medium text-white flex items-center">
-                                <span class="w-3 h-3 bg-white rounded-full animate-pulse mr-2"></span>
+                        <div class="px-4 py-3 border-b border-white/20">
+                            <h3 class="text-md font-medium text-white flex items-center">
+                                <span class="w-2 h-2 bg-white rounded-full animate-pulse mr-2"></span>
                                 Juegos en Vivo
                             </h3>
                         </div>
-                        <div class="p-6">
+                        <div class="p-4">
                             @if($juegosEnVivo->count() > 0)
-                                <div class="space-y-4">
-                                    @foreach($juegosEnVivo->take(3) as $juego) 
-                                        <div class="flex justify-between items-center p-4 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-colors">
-                                            <div>
-                                                <h4 class="font-medium text-white">
-                                                    {{ $juego->equipoLocal->nombre }} vs {{ $juego->equipoVisitante->nombre }}
+                                <div class="space-y-2">
+                                    @foreach($juegosEnVivo->take(3) as $juego)
+                                        <div class="flex justify-between items-center p-2 bg-white/5 rounded hover:bg-white/10 transition-colors">
+                                            <div class="truncate">
+                                                <div class="flex items-center space-x-1">
+                                                    @if($juego->cancha)
+                                                        <span class="text-xs text-white/50">{{ $juego->cancha->nombre }}</span>
+                                                    @endif
+                                                </div>
+                                                <h4 class="text-sm font-medium text-white truncate">
+                                                    {{ $juego->equipoLocal->nombre ?? 'Local' }} vs {{ $juego->equipoVisitante->nombre ?? 'Visitante' }}
                                                 </h4>
-                                                <p class="text-sm text-white/70">
-                                                    {{ $juego->cancha->nombre ?? 'Cancha Principal' }}
-                                                </p>
                                             </div>
                                             <div class="text-right">
-                                                <p class="text-xl font-bold text-white">
-                                                    {{ $juego->puntos_local ?? 0 }} - {{ $juego->puntos_visitante ?? 0 }}
-                                                </p>
-                                                <p class="text-xs text-white/70">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
+                                                    {{ $juego->puntos_local ?? 0 }}-{{ $juego->puntos_visitante ?? 0 }}
+                                                </span>
+                                                <p class="text-xs text-white/70 mt-1">
                                                     @php
                                                         $fechaHoraInicio = \Carbon\Carbon::parse($juego->fecha->format('Y-m-d') . ' ' . $juego->hora);
                                                         $tiempoTranscurrido = now()->diffInMinutes($fechaHoraInicio);
-                                                        $duracionCuarto = $juego->duracion_cuarto ?? 12; // minutos por defecto
-                                                        $duracionDescanso = $juego->duracion_descanso ?? 2; // minutos por defecto
+                                                        $duracionCuarto = $juego->duracion_cuarto ?? 12;
+                                                        $duracionDescanso = $juego->duracion_descanso ?? 2;
                                                         
-                                                        if ($tiempoTranscurrido <= $duracionCuarto) {
-                                                            echo "1er Cuarto - {$tiempoTranscurrido}'";
+                                                        if ($tiempoTranscurrido <= 0) {
+                                                            echo "Por comenzar";
+                                                        } elseif ($tiempoTranscurrido <= $duracionCuarto) {
+                                                            echo "Q1 - {$tiempoTranscurrido}'";
                                                         } elseif ($tiempoTranscurrido <= ($duracionCuarto + $duracionDescanso)) {
                                                             echo "Descanso";
                                                         } elseif ($tiempoTranscurrido <= ($duracionCuarto * 2 + $duracionDescanso)) {
-                                                            $minutosCuarto = $tiempoTranscurrido - $duracionCuarto - $duracionDescanso;
-                                                            echo "2do Cuarto - {$minutosCuarto}'";
+                                                            $minutos = $tiempoTranscurrido - $duracionCuarto - $duracionDescanso;
+                                                            echo "Q2 - {$minutos}'";
                                                         } elseif ($tiempoTranscurrido <= ($duracionCuarto * 2 + $duracionDescanso * 2)) {
-                                                            echo "Medio Tiempo";
+                                                            echo "Medio T.";
                                                         } elseif ($tiempoTranscurrido <= ($duracionCuarto * 3 + $duracionDescanso * 2)) {
-                                                            $minutosCuarto = $tiempoTranscurrido - ($duracionCuarto * 2) - ($duracionDescanso * 2);
-                                                            echo "3er Cuarto - {$minutosCuarto}'";
+                                                            $minutos = $tiempoTranscurrido - ($duracionCuarto * 2) - ($duracionDescanso * 2);
+                                                            echo "Q3 - {$minutos}'";
                                                         } elseif ($tiempoTranscurrido <= ($duracionCuarto * 3 + $duracionDescanso * 3)) {
                                                             echo "Descanso";
                                                         } elseif ($tiempoTranscurrido <= ($duracionCuarto * 4 + $duracionDescanso * 3)) {
-                                                            $minutosCuarto = $tiempoTranscurrido - ($duracionCuarto * 3) - ($duracionDescanso * 3);
-                                                            echo "4to Cuarto - {$minutosCuarto}'";
+                                                            $minutos = $tiempoTranscurrido - ($duracionCuarto * 3) - ($duracionDescanso * 3);
+                                                            echo "Q4 - {$minutos}'";
                                                         } else {
-                                                            echo "Tiempo Extra";
+                                                            echo "T. Extra";
                                                         }
                                                     @endphp
                                                 </p>
@@ -215,13 +228,8 @@
                                     @endforeach
                                 </div>
                             @else
-                                <div class="text-center py-8">
-                                    <div class="text-white/60 mb-2">
-                                        <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                    </div>
-                                    <p class="text-white/70 text-sm">No hay juegos en vivo en este momento</p>
+                                <div class="text-center py-4">
+                                    <p class="text-white/70 text-xs">No hay juegos en vivo</p>
                                 </div>
                             @endif
                         </div>
@@ -229,48 +237,44 @@
 
                     <!-- Resultados -->
                     <div class="bg-gradient-to-br from-red-500 to-red-600 dark:from-red-600 dark:to-red-700 rounded-xl shadow-lg overflow-hidden">
-                        <div class="px-6 py-4 border-b border-white/20">
-                            <h3 class="text-lg font-medium text-white">Resultados Recientes</h3>
+                        <div class="px-4 py-3 border-b border-white/20">
+                            <h3 class="text-md font-medium text-white">Resultados Recientes</h3>
                         </div>
-                        <div class="p-6">
-                            @php
-                                // Obtener partidos finalizados
-                                $partidosFinalizados = App\Models\Juego::with(['equipoLocal', 'equipoVisitante', 'torneos'])
-                                    ->where('estado', 'Finalizado')
-                                    ->orderBy('fecha', 'desc')
-                                    ->orderBy('hora', 'desc')
-                                    ->take(3)  // Aumenté a 3 partidos ya que solo mostraremos estos
-                                    ->get();
-                            @endphp
-
-                            @if($partidosFinalizados->count() > 0)
-                                <div class="space-y-3">  <!-- Reduje el espacio entre items -->
-                                    @foreach($partidosFinalizados as $partido)
-                                        <div class="bg-white/10 rounded-lg p-3 hover:bg-white/20 transition-colors">
-                                            <!-- Equipo local -->
-                                            <div class="flex justify-between items-center">
-                                                <div class="text-white font-medium">{{ $partido->equipoLocal->nombre }}</div>
-                                                <div class="text-white font-bold mx-2">{{ $partido->goles_local ?? 0 }}</div>
+                        <div class="p-4">
+                            @if($resultadosRecientes->count() > 0)
+                                <div class="space-y-2">
+                                    @foreach($resultadosRecientes as $partido)
+                                        <div class="flex justify-between items-center p-2 bg-white/5 rounded hover:bg-white/10 transition-colors">
+                                            <div class="truncate">
+                                                <div class="flex items-center space-x-1">
+                                                    @if($partido->cancha)
+                                                        <span class="text-xs text-white/50">{{ $partido->cancha->nombre }}</span>
+                                                    @endif
+                                                </div>
+                                                <h4 class="text-sm font-medium text-white truncate">
+                                                    {{ $partido->equipoLocal->nombre ?? 'Local' }} vs {{ $partido->equipoVisitante->nombre ?? 'Visitante' }}
+                                                </h4>
                                             </div>
-                                            
-                                            <!-- Equipo visitante -->
-                                            <div class="flex justify-between items-center mt-1">
-                                                <div class="text-white font-medium">{{ $partido->equipoVisitante->nombre }}</div>
-                                                <div class="text-white font-bold mx-2">{{ $partido->goles_visitante ?? 0 }}</div>
-                                            </div>
-                                            
-                                            <!-- Nombre del torneo (si existe) -->
-                                            @if($partido->torneos)
-                                                <p class="text-xs text-white/60 mt-1 text-center">
-                                                    {{ $partido->torneos->nombre }}
+                                            <div class="text-right min-w-[80px]">
+                                                <!-- Marcador con campos unificados -->
+                                                <p class="text-lg font-bold text-white">
+                                                    {{ $partido->puntos_local ?? $partido->goles_local ?? 0 }}-{{ $partido->puntos_visitante ?? $partido->goles_visitante ?? 0 }}
                                                 </p>
-                                            @endif
+                                                <div class="flex justify-between items-center">
+                                                    @if($partido->torneo)
+                                                        <span class="text-xs text-white/60">{{ $partido->torneo->nombre }}</span>
+                                                    @endif
+                                                    <span class="text-xs text-white/60 ml-2">
+                                                        {{ $partido->fecha->format('d/m') }}  <!-- Fecha completa -->
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
                                     @endforeach
                                 </div>
                             @else
-                                <div class="text-center py-8 text-white/70">
-                                    No hay partidos recientes
+                                <div class="text-center py-4">
+                                    <p class="text-white/70 text-xs">No hay resultados recientes</p>
                                 </div>
                             @endif
                         </div>
