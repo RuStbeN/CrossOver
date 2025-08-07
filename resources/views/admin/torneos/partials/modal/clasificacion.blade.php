@@ -143,15 +143,21 @@
                 <div class="space-y-2 text-sm">
                     <div class="flex items-center justify-between">
                         <span class="font-medium text-gray-600 dark:text-gray-400">Victoria:</span>
-                        <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-md font-semibold">3 puntos</span>
+                        <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-md font-semibold">
+                            <span x-text="selectedTorneo ? selectedTorneo.puntos_por_victoria : 3"></span> puntos
+                        </span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="font-medium text-gray-600 dark:text-gray-400">Empate:</span>
-                        <span class="px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-md font-semibold">1 punto</span>
+                        <span class="px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-md font-semibold">
+                            <span x-text="selectedTorneo ? selectedTorneo.puntos_por_empate : 1"></span> punto<span x-text="selectedTorneo && selectedTorneo.puntos_por_empate > 1 ? 's' : ''"></span>
+                        </span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="font-medium text-gray-600 dark:text-gray-400">Derrota:</span>
-                        <span class="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-md font-semibold">0 puntos</span>
+                        <span class="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-md font-semibold">
+                            <span x-text="selectedTorneo ? selectedTorneo.puntos_por_derrota : 0"></span> puntos
+                        </span>
                     </div>
                 </div>
                 

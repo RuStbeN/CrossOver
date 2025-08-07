@@ -1,3 +1,7 @@
+@php
+    $esEspejo = ($espejo ?? false) || ($tipoEquipo === 'Visitante');
+@endphp
+
 <div class="w-[380px] h-[160px] bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 rounded-lg shadow-md flex flex-col overflow-hidden jugador-card {{ $tipoEquipo === 'Local' ? 'team-local' : 'team-visitante' }}"
      data-jugador-id="{{ $alineacion->jugador_id ?? $jugador->id }}">
     
@@ -5,9 +9,8 @@
     <div class="flex items-center justify-between px-2 py-1 bg-gray-100 dark:bg-dark-600 border-b border-gray-300 dark:border-dark-600 h-10 gap-2">
         <div class="flex items-center gap-2 text-sm text-black dark:text-white">
             <span class="flex items-center gap-1">
-                <i class="fas fa-star text-yellow-500"></i>
+                <i class="fas fa-basketball-ball text-orange-500"></i>
                 <span class="puntos-jugador">{{ $alineacion->puntos ?? 0 }}</span>
-                <span class="text-xs font-medium ml-1">PTS</span>
             </span>
             <span class="flex items-center gap-1">
                 <i class="fas fa-exclamation-triangle text-red-500"></i> 0
@@ -31,12 +34,11 @@
         </div>
     </div>
 
-
     <!-- Cuerpo -->
-    <div class="flex flex-grow p-2">
+    <div class="flex {{ $esEspejo ? 'flex-row-reverse' : 'flex-row' }} flex-grow p-2">
         <!-- Círculo con número de camiseta -->
         <div class="flex justify-center items-center w-[50px]">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm {{ $tipoEquipo === 'Local' ? 'bg-blue-600' : 'bg-red-600' }}">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-2xl {{ $tipoEquipo === 'Local' ? 'bg-blue-600' : 'bg-red-600' }}">
                 {{ $alineacion->numero_camiseta ?? $jugador->numero_camiseta }}
             </div>
         </div>

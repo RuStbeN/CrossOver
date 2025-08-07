@@ -8,139 +8,131 @@
 
 <main class="relative z-10 py-4">
     <div class="w-full mx-auto">
-        <!-- Contenedor horizontal mejorado -->
-        <div class="bg-gradient-to-r from-white to-gray-50 dark:from-dark-800 dark:to-dark-900 rounded-xl shadow-lg border border-gray-200 dark:border-dark-600 p-4">
-            <div class="flex flex-wrap items-center justify-between gap-4">
+        <!-- Contenedor horizontal compacto en una sola línea -->
+        <div class="bg-gradient-to-r from-white to-gray-50 dark:from-dark-800 dark:to-dark-900 rounded-xl shadow-lg border border-gray-200 dark:border-dark-600 p-3">
+            <div class="flex items-center justify-between gap-3">
                 
-                <!-- Columna 1: Controles del temporizador -->
+                <!-- Columna 1: Controles del temporizador (solo iconos) -->
                 @if($juego->estado === 'En Curso')
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1">
                     <!-- Botón Iniciar -->
                     <button id="btn-iniciar" 
-                            class="group relative p-2.5 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 
+                            class="group relative p-2 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 
                                    disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed 
-                                   text-white rounded-lg transition-all duration-300 transform hover:scale-105 
+                                   text-white rounded-md transition-all duration-300 transform hover:scale-105 
                                    shadow-md hover:shadow-lg border border-green-400/30 disabled:border-gray-400/30"
                             {{ ($juego->estado_tiempo ?? 'pausado') === 'corriendo' ? 'disabled' : '' }}
                             title="Iniciar tiempo">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
                         </svg>
                     </button>
                     
                     <!-- Botón Pausar -->
                     <button id="btn-pausar" 
-                            class="group relative p-2.5 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 
+                            class="group relative p-2 bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 
                                    disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed 
-                                   text-white rounded-lg transition-all duration-300 transform hover:scale-105 
+                                   text-white rounded-md transition-all duration-300 transform hover:scale-105 
                                    shadow-md hover:shadow-lg border border-yellow-400/30 disabled:border-gray-400/30"
                             {{ ($juego->estado_tiempo ?? 'pausado') !== 'corriendo' ? 'disabled' : '' }}
                             title="Pausar tiempo">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                         </svg>
                     </button>
                     
                     <!-- Botón Reiniciar -->
                     <button id="btn-reiniciar" 
-                            class="group relative p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 
-                                   text-white rounded-lg transition-all duration-300 transform hover:scale-105 
+                            class="group relative p-2 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 
+                                   text-white rounded-md transition-all duration-300 transform hover:scale-105 
                                    shadow-md hover:shadow-lg border border-blue-400/30"
                             title="Reiniciar cuarto">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
                         </svg>
                     </button>
                     
                     <!-- Botón Avanzar -->
                     <button id="btn-avanzar" 
-                            class="group relative p-2.5 bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 
-                                   text-white rounded-lg transition-all duration-300 transform hover:scale-105 
+                            class="group relative p-2 bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 
+                                   text-white rounded-md transition-all duration-300 transform hover:scale-105 
                                    shadow-md hover:shadow-lg border border-purple-400/30"
                             title="Avanzar cuarto">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
                         </svg>
                     </button>
                 </div>
                 @endif
                 
-                <!-- Columna 2: Temporizador, cuarto y estado del tiempo centrados -->
-                <div class="flex flex-col items-center space-y-2">
-                    <!-- Temporizador estilo deportivo mejorado -->
-                    <div class="relative">
-                        <div class="bg-black dark:bg-gray-900 rounded-lg shadow-2xl border-4 border-gray-800 dark:border-gray-700 px-6 py-2">
-                            <!-- Display principal del tiempo -->
-                            <div class="text-5xl font-mono font-black text-green-400 dark:text-green-300 tracking-wider leading-none drop-shadow-lg" id="temporizador" style="text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);">
-                                {{ sprintf('%02d:%02d', floor(($juego->tiempo_restante ?? $juego->duracion_cuarto * 60) / 60), ($juego->tiempo_restante ?? $juego->duracion_cuarto * 60) % 60) }}
-                            </div>
-                            <!-- Línea decorativa inferior -->
-                            <div class="h-1 bg-gradient-to-r from-green-400 to-green-500 dark:from-green-300 dark:to-green-400 rounded-full mt-1"></div>
+                <!-- Columna 2: Temporizador compacto -->
+                <div class="flex items-center space-x-4">
+                    <!-- Temporizador estilo deportivo compacto -->
+                    <div class="bg-black dark:bg-gray-900 rounded-lg shadow-lg border-2 border-gray-800 dark:border-gray-700 px-4 py-1">
+                        <div class="text-3xl font-mono font-black text-green-400 dark:text-green-300 tracking-wider leading-none" id="temporizador" style="text-shadow: 0 0 15px rgba(34, 197, 94, 0.5);">
+                            {{ sprintf('%02d:%02d', floor(($juego->tiempo_restante ?? $juego->duracion_cuarto * 60) / 60), ($juego->tiempo_restante ?? $juego->duracion_cuarto * 60) % 60) }}
                         </div>
+                        <div class="h-0.5 bg-gradient-to-r from-green-400 to-green-500 dark:from-green-300 dark:to-green-400 rounded-full"></div>
                     </div>
                     
-                    <!-- Información del partido estilo tablero deportivo -->
-                    <div class="flex items-center space-x-4">
-                        <!-- Cuarto actual estilo tablero -->
-                        <div id="cuarto-actual" class="flex items-center">
-                            @if($juego->en_descanso ?? false)
-                                <div class="bg-orange-500 dark:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold tracking-wide shadow-lg border-2 border-orange-600 dark:border-orange-700">
-                                    <div class="flex items-center space-x-1">
-                                        <span class="text-sm">Cuarto</span>
-                                        <span class="text-lg font-black">{{ $juego->cuarto_actual ?? 1 }}</span>
-                                        <span class="text-xs bg-orange-600 dark:bg-orange-700 px-1.5 py-0.5 rounded text-white">DESCANSO</span>
-                                    </div>
-                                </div>
-                            @else
-                                <div class="bg-blue-600 dark:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold tracking-wide shadow-lg border-2 border-blue-700 dark:border-blue-800">
-                                    <div class="flex items-center space-x-1">
-                                        <span class="text-sm">Cuarto</span>
-                                        <span class="text-lg font-black">{{ $juego->cuarto_actual ?? 1 }}</span>
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
-                        
-                        <!-- Estado del tiempo estilo LED -->
-                        @if($juego->estado === 'En Curso')
-                        <div id="estado-tiempo" class="flex items-center">
-                            <div class="
-                                @if(($juego->en_descanso ?? false))
-                                    bg-orange-100 dark:bg-orange-900/50 border-orange-300 dark:border-orange-700 text-orange-800 dark:text-orange-200
-                                @elseif(($juego->estado_tiempo ?? 'pausado') === 'corriendo')
-                                    bg-green-100 dark:bg-green-900/50 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200
-                                @elseif(($juego->estado_tiempo ?? 'pausado') === 'pausado')
-                                    bg-red-100 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200
-                                @endif
-                                px-3 py-1 rounded-md text-xs font-bold tracking-wider border-2 shadow-lg">
-                                <div class="flex items-center">
-                                    <div class="w-2 h-2 rounded-full mr-2
-                                        @if($juego->en_descanso ?? false)
-                                            bg-orange-500 dark:bg-orange-400
-                                        @elseif(($juego->estado_tiempo ?? 'pausado') === 'corriendo')
-                                            bg-green-500 dark:bg-green-400 animate-pulse
-                                        @elseif(($juego->estado_tiempo ?? 'pausado') === 'pausado')
-                                            bg-red-500 dark:bg-red-400
-                                        @endif">
-                                    </div>
-                                    @if($juego->en_descanso ?? false)
-                                        DESCANSO
-                                    @elseif(($juego->estado_tiempo ?? 'pausado') === 'corriendo')
-                                        CORRIENDO
-                                    @elseif(($juego->estado_tiempo ?? 'pausado') === 'pausado')
-                                        PAUSADO
-                                    @endif
+                    <!-- Cuarto actual compacto -->
+                    <div id="cuarto-actual">
+                        @if($juego->en_descanso ?? false)
+                            <div class="bg-orange-500 dark:bg-orange-600 text-white px-2 py-1 rounded-md text-xs font-bold shadow-md border border-orange-600">
+                                <div class="flex items-center space-x-1">
+                                    <span class="text-lg font-black">{{ $juego->cuarto_actual ?? 1 }}</span>
+                                    <span class="text-xs bg-orange-600 px-1 py-0.5 rounded">DESC</span>
                                 </div>
                             </div>
-                        </div>
+                        @else
+                            <div class="bg-blue-600 dark:bg-blue-700 text-white px-2 py-1 rounded-md text-xs font-bold shadow-md border border-blue-700">
+                                <div class="flex items-center space-x-1">
+                                    <span class="text-xs">Q</span>
+                                    <span class="text-lg font-black">{{ $juego->cuarto_actual ?? 1 }}</span>
+                                </div>
+                            </div>
                         @endif
                     </div>
+                    
+                    <!-- Estado del tiempo compacto -->
+                    @if($juego->estado === 'En Curso')
+                    <div id="estado-tiempo">
+                        <div class="
+                            @if(($juego->en_descanso ?? false))
+                                bg-orange-100 dark:bg-orange-900/50 border-orange-300 dark:border-orange-700 text-orange-800 dark:text-orange-200
+                            @elseif(($juego->estado_tiempo ?? 'pausado') === 'corriendo')
+                                bg-green-100 dark:bg-green-900/50 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200
+                            @elseif(($juego->estado_tiempo ?? 'pausado') === 'pausado')
+                                bg-red-100 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200
+                            @endif
+                            px-2 py-1 rounded-md text-xs font-bold border shadow-md">
+                            <div class="flex items-center">
+                                <div class="w-1.5 h-1.5 rounded-full mr-1
+                                    @if($juego->en_descanso ?? false)
+                                        bg-orange-500 dark:bg-orange-400
+                                    @elseif(($juego->estado_tiempo ?? 'pausado') === 'corriendo')
+                                        bg-green-500 dark:bg-green-400 animate-pulse
+                                    @elseif(($juego->estado_tiempo ?? 'pausado') === 'pausado')
+                                        bg-red-500 dark:bg-red-400
+                                    @endif">
+                                </div>
+                                @if($juego->en_descanso ?? false)
+                                    DESC
+                                @elseif(($juego->estado_tiempo ?? 'pausado') === 'corriendo')
+                                    ON
+                                @elseif(($juego->estado_tiempo ?? 'pausado') === 'pausado')
+                                    OFF
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
                 
-                <!-- Columna 3: Estado del partido y botón de acción -->
-                <div class="flex flex-col items-center space-y-2">
-                    <!-- Estado del partido mejorado -->
-                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold shadow-md border transition-all duration-300
+                <!-- Columna 3: Estado del partido y botón de acción compactos -->
+                <div class="flex items-center space-x-3">
+                    <!-- Estado del partido compacto -->
+                    <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold shadow-md border
                         @if($juego->estado === 'Programado')
                             bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border-yellow-300
                             dark:from-yellow-900/40 dark:to-yellow-800/40 dark:text-yellow-200 dark:border-yellow-600/50
@@ -148,7 +140,7 @@
                             bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300
                             dark:from-green-900/40 dark:to-green-800/40 dark:text-green-200 dark:border-green-600/50
                         @endif">
-                        <div class="w-2 h-2 rounded-full mr-2 animate-pulse
+                        <div class="w-1.5 h-1.5 rounded-full mr-1 animate-pulse
                             @if($juego->estado === 'Programado')
                                 bg-yellow-500 dark:bg-yellow-400
                             @else
@@ -156,20 +148,20 @@
                             @endif">
                         </div>
                         @if($juego->estado === 'Programado')
-                            Partido Programado
+                            Programado
                         @else
-                            Partido En Curso
+                            En Curso
                         @endif
                     </span>
                     
-                    <!-- Botón de acción principal debajo del estado -->
+                    <!-- Botón de acción principal -->
                     @if($juego->estado === 'Programado')
                         <button onclick="iniciarPartidoOficial()" 
-                                class="group relative px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 
-                                       text-white rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 
+                                class="group relative px-3 py-1.5 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 
+                                       text-white rounded-md text-xs font-semibold transition-all duration-300 transform hover:scale-105 
                                        shadow-md hover:shadow-lg border border-green-500/30">
                             <span class="relative z-10 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
                                 </svg>
                                 Iniciar
@@ -177,11 +169,11 @@
                         </button>
                     @else
                         <button onclick="finalizarPartidoOficial()" 
-                                class="group relative px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 
-                                       text-white rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 
+                                class="group relative px-3 py-1.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 
+                                       text-white rounded-md text-xs font-semibold transition-all duration-300 transform hover:scale-105 
                                        shadow-md hover:shadow-lg border border-red-500/30">
                             <span class="relative z-10 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd" />
                                 </svg>
                                 Finalizar
@@ -194,14 +186,18 @@
     </div>
 
 
-    <!-- Jugadores en dos columnas -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mx-2 mt-6">
+    <!-- Jugadores en dos columnas con efecto espejo -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mx-2 mt-4">
         <!-- Equipo Local -->
         <div class="bg-white dark:bg-dark-800 rounded-lg shadow border border-dark-100 dark:border-dark-700 overflow-hidden">
-            <div class="px-4 py-2 border-b border-gray-200 dark:border-dark-700 bg-blue-50 dark:bg-blue-900/20">
-                <h3 class="font-bold text-center">{{ $juego->equipoLocal->nombre }}</h3>
+            <div class="px-4 py-2 border-b border-gray-200 dark:border-dark-700 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 relative overflow-hidden">
+                <!-- Efecto de brillo -->
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform skew-x-12 translate-x-full animate-pulse"></div>
+                <h3 class="font-bold text-center relative z-10 text-blue-800 dark:text-blue-200">{{ $juego->equipoLocal->nombre }}</h3>
+                <!-- Decoración lateral izquierda -->
+                <div class="absolute left-0 top-0 h-full w-1 bg-blue-500"></div>
             </div>
-            <div class="p-2 space-y-2">
+            <div class="p-2 space-y-2 bg-gradient-to-br from-blue-50/30 to-transparent dark:from-blue-900/10">
                 @if($juego->estado === 'Programado' || $juego->juegoAlineaciones->where('tipo_equipo', 'Local')->count() > 0)
                     @if($juego->estado === 'Programado')
                         @foreach($titularesLocalSeleccionados as $jugador)
@@ -222,25 +218,35 @@
                     @endif
                 @else
                     <div class="text-center py-4 text-gray-500 dark:text-gray-400">
+                        <div class="w-12 h-12 mx-auto mb-2 opacity-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                            </svg>
+                        </div>
                         <p>No hay jugadores seleccionados</p>
                     </div>
                 @endif
             </div>
         </div>
 
-        <!-- Equipo Visitante -->
+        <!-- Equipo Visitante (efecto espejo - números a la derecha) -->
         <div class="bg-white dark:bg-dark-800 rounded-lg shadow border border-dark-100 dark:border-dark-700 overflow-hidden">
-            <div class="px-4 py-2 border-b border-gray-200 dark:border-dark-700 bg-red-50 dark:bg-red-900/20">
-                <h3 class="font-bold text-center">{{ $juego->equipoVisitante->nombre }}</h3>
+            <div class="px-4 py-2 border-b border-gray-200 dark:border-dark-700 bg-gradient-to-l from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 relative overflow-hidden">
+                <!-- Efecto de brillo -->
+                <div class="absolute inset-0 bg-gradient-to-l from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full animate-pulse"></div>
+                <h3 class="font-bold text-center relative z-10 text-red-800 dark:text-red-200">{{ $juego->equipoVisitante->nombre }}</h3>
+                <!-- Decoración lateral derecha -->
+                <div class="absolute right-0 top-0 h-full w-1 bg-red-500"></div>
             </div>
-            <div class="p-2 space-y-2">
+            <div class="p-2 space-y-2 bg-gradient-to-bl from-red-50/30 to-transparent dark:from-red-900/10">
                 @if($juego->estado === 'Programado' || $juego->juegoAlineaciones->where('tipo_equipo', 'Visitante')->count() > 0)
                     @if($juego->estado === 'Programado')
                         @foreach($titularesVisitanteSeleccionados as $jugador)
                             @include('arbitro.partials.jugador-card', [
                                 'jugador' => $jugador,
                                 'estado' => 'Programado',
-                                'tipoEquipo' => 'Visitante'
+                                'tipoEquipo' => 'Visitante',
+                                'espejo' => true
                             ])
                         @endforeach
                     @else
@@ -248,12 +254,18 @@
                             @include('arbitro.partials.jugador-card', [
                                 'alineacion' => $alineacion,
                                 'estado' => 'En Curso',
-                                'tipoEquipo' => 'Visitante'
+                                'tipoEquipo' => 'Visitante',
+                                'espejo' => true
                             ])
                         @endforeach
                     @endif
                 @else
                     <div class="text-center py-4 text-gray-500 dark:text-gray-400">
+                        <div class="w-12 h-12 mx-auto mb-2 opacity-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                            </svg>
+                        </div>
                         <p>No hay jugadores seleccionados</p>
                     </div>
                 @endif
@@ -263,7 +275,6 @@
 
     @include('arbitro.partials.modal-rebotes')
     @include('arbitro.partials.modal-faltas')
-
 
     <!-- Script para pasar juegoId al JavaScript -->
     <script>

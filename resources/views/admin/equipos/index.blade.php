@@ -277,7 +277,7 @@
                 x-transition:leave="transition ease-in duration-200"
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
-                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+                class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50"
                 @click.self="closeEquipoModal()">
 
                 <div x-show="showEquipoModal"
@@ -287,7 +287,7 @@
                     x-transition:leave="transition ease-in duration-200"
                     x-transition:leave-start="opacity-100 transform scale-100"
                     x-transition:leave-end="opacity-0 transform scale-95"
-                    class="bg-white dark:bg-dark-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                    class="bg-white dark:bg-dark-800 rounded-lg shadow-xl w-full max-w-5xl h-[70vh] flex flex-col">
 
                     <!-- Header del modal -->
                     <div class="px-6 py-4 border-b border-gray-200 dark:border-dark-700 bg-gray-100 dark:bg-dark-900 flex items-center justify-between">
@@ -300,7 +300,7 @@
                     </div>
 
                     <!-- Pestañas del modal -->
-                    <div class="px-6 py-4 border-b border-gray-200 dark:border-dark-700">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-dark-700 flex-shrink-0">
                         <ul class="flex space-x-6">
                             <li>
                                 <button 
@@ -324,7 +324,7 @@
                     </div>
 
                     <!-- Contenido del modal -->
-                    <div class="p-6">
+                    <div class="flex-1 overflow-y-auto px-6 py-3">
                         <template x-if="selectedEquipo">
                             <div class="space-y-6">
                                 <!-- Pestaña de detalles -->
@@ -336,13 +336,12 @@
                                 <div x-show="activeEquipoTab === 'jugadores'" class="space-y-6">
                                     @include('admin.equipos.partials.modal.jugadores')
                                 </div>
-
                             </div>
                         </template>
                     </div>
 
                     <!-- Footer del modal -->
-                    <div class="px-6 py-4 border-t border-gray-200 dark:border-dark-700 bg-gray-100 dark:bg-dark-900 flex justify-end space-x-3">
+                    <div class="px-6 py-4 border-t border-gray-200 dark:border-dark-700 bg-gray-100 dark:bg-dark-900 flex justify-end space-x-3 flex-shrink-0">
                         <button @click="closeEquipoModal()" 
                                 class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md font-medium transition-colors">
                             Cerrar
@@ -354,6 +353,7 @@
                     </div>
                 </div>
             </div>
+
         </main>
 
 @endsection

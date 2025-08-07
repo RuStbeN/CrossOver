@@ -213,23 +213,23 @@
 
         <!-- Modal para ver detalles del entrenador -->
         <div x-show="showEntrenadorModal" 
-            x-transition:enter="transition ease-out duration-300" 
-            x-transition:enter-start="opacity-0" 
-            x-transition:enter-end="opacity-100" 
-            x-transition:leave="transition ease-in duration-200" 
-            x-transition:leave-start="opacity-100" 
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" 
+            class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50"
             @click.self="closeEntrenadorModal()">
             
             <div x-show="showEntrenadorModal" 
-                x-transition:enter="transition ease-out duration-300" 
-                x-transition:enter-start="opacity-0 transform scale-95" 
-                x-transition:enter-end="opacity-100 transform scale-100" 
-                x-transition:leave="transition ease-in duration-200" 
-                x-transition:leave-start="opacity-100 transform scale-100" 
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 transform scale-95"
+                x-transition:enter-end="opacity-100 transform scale-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 transform scale-100"
                 x-transition:leave-end="opacity-0 transform scale-95"
-                class="bg-white dark:bg-dark-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                class="bg-white dark:bg-dark-800 rounded-lg shadow-xl w-full max-w-5xl h-[70vh] flex flex-col">
                 
                 <!-- Header del modal -->
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-dark-700 bg-gray-100 dark:bg-dark-900 flex items-center justify-between">
@@ -242,7 +242,7 @@
                 </div>
 
                 <!-- Contenido del modal -->
-                <div class="p-6">
+                <div class="flex-1 overflow-y-auto px-6 py-3">
                     <template x-if="selectedEntrenador">
                          @include('admin.entrenadores.partials.modal.informacion')
                     </template>
