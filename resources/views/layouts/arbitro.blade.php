@@ -11,16 +11,9 @@
     },
     
     updateParticles() {
-        const particles = document.querySelectorAll('.particle');
-        particles.forEach(particle => {
-            if (this.darkMode) {
-                particle.classList.remove('bg-blue-400', 'bg-blue-300');
-                particle.classList.add('bg-primary-400', 'bg-primary-500');
-            } else {
-                particle.classList.remove('bg-primary-400', 'bg-primary-500');
-                particle.classList.add('bg-blue-400', 'bg-blue-300');
-            }
-        });
+        if (window.updateParticlesTheme) {
+            window.updateParticlesTheme(this.darkMode);
+        }
     },
     
     addNotification(notification) {
@@ -41,20 +34,22 @@
     }
 }" 
 x-init="
-    $watch('darkMode', val => {
-        localStorage.setItem('darkMode', val);
-        document.documentElement.classList.toggle('dark', val);
-        updateParticles();
-    });
-    updateParticles();
+    // Inicializar el modo oscuro al cargar la página
+    document.documentElement.classList.toggle('dark', darkMode);
     
-    // Exponer función globalmente
+    // Exponer función globalmente para el sistema de notificaciones
     window.showNotification = (type, message) => {
-        showNotification(type, message);
+        $data.showNotification(type, message);
     };
+    
+    // Inicializar partículas
+    $nextTick(() => {
+        if (window.updateParticlesTheme) {
+            window.updateParticlesTheme($data.darkMode);
+        }
+    });
 " 
 :class="{ 'dark': darkMode }">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -62,113 +57,61 @@ x-init="
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" href="{{ asset('logo.png') }}" type="image/png">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        'primary': {
-                            '50': '#fff8f5',
-                            '100': '#fff0e5',
-                            '200': '#ffd9bf',
-                            '300': '#ffb58a',
-                            '400': '#ff8a54',
-                            '500': '#ff6b35',
-                            '600': '#e65020',
-                            '700': '#bf3a15',
-                            '800': '#992b12',
-                            '900': '#7a220e',
-                        },
-                        'dark': {
-                            '50': '#f6f6f6',
-                            '100': '#e7e7e7',
-                            '200': '#d1d1d1',
-                            '300': '#b0b0b0',
-                            '400': '#888888',
-                            '500': '#6d6d6d',
-                            '600': '#5d5d5d',
-                            '700': '#4f4f4f',
-                            '800': '#454545',
-                            '900': '#292929',
-                        },
-                        blue: {
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                        },
-                    },
-                    fontFamily: {
-                        'poppins': ['Poppins', 'sans-serif'],
-                    },
-                    animation: {
-                        'float': 'float 8s ease-in-out infinite',
-                        'float-reverse': 'float-reverse 7s ease-in-out infinite',
-                        'float-slow': 'float-slow 12s ease-in-out infinite',
-                    },
-                    keyframes: {
-                        'float': {
-                            '0%, 100%': { transform: 'translateY(0) translateX(0)' },
-                            '50%': { transform: 'translateY(-100px) translateX(50px)' },
-                        },
-                        'float-reverse': {
-                            '0%, 100%': { transform: 'translateY(0) translateX(0)' },
-                            '50%': { transform: 'translateY(100px) translateX(-50px)' },
-                        },
-                        'float-slow': {
-                            '0%, 100%': { transform: 'translateY(0) translateX(0) scale(1)' },
-                            '33%': { transform: 'translateY(-80px) translateX(40px) scale(1.1)' },
-                            '66%': { transform: 'translateY(60px) translateX(-30px) scale(0.9)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    {{-- Meta tags para el sistema de notificaciones --}}
+    @if($errors->any())
+        <meta name="laravel-errors" content="{{ json_encode($errors->all()) }}">
+    @endif
     
-    <!-- Fuentes y Alpine JS -->
+    @if(session('success'))
+        <meta name="laravel-success" content="{{ session('success') }}">
+    @endif
+    
+    @if(session('error'))
+        <meta name="laravel-error" content="{{ session('error') }}">
+    @endif
+    
+    @if(session('warning'))
+        <meta name="laravel-warning" content="{{ session('warning') }}">
+    @endif
+    
+    @if(session('info'))
+        <meta name="laravel-info" content="{{ session('info') }}">
+    @endif
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Tailwind y JS principal -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
+    <!-- Fuentes -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js" defer></script>
-
-    <!-- Estilos personalizados -->
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .text-gradient { @apply bg-clip-text text-transparent; }
-            .glass-effect {
-                backdrop-filter: blur(16px) saturate(180%);
-                -webkit-backdrop-filter: blur(16px) saturate(180%);
-                background-color: rgba(255, 255, 255, 0.8);
-                border: 1px solid rgba(0, 0, 0, 0.1);
-            }
-            .dark .glass-effect {
-                background-color: rgba(30, 41, 59, 0.8);
-                border: 1px solid rgba(255, 107, 53, 0.3);
-            }
-            .particle {
-                @apply absolute rounded-full pointer-events-none;
-            }
-        }
-    </style>
+    
     @stack('head')
 </head>
-
-<body class="bg-gray-200 dark:bg-dark-900 min-h-screen">
+<body class="bg-gray-200 dark:bg-dark-900 min-h-screen font-poppins">
+    
     <!-- Partículas de fondo -->
     <div id="particles-container" class="fixed inset-0 overflow-hidden -z-10 bg-gray-200 dark:bg-dark-900">
         <!-- Partículas generadas por JS -->
     </div>
 
-    <!-- Notificaciones globales -->
+    <!-- Sistema de notificaciones -->
     <div class="fixed top-4 right-4 space-y-3 z-[9999]" 
         x-show="notifications.length > 0">
         <template x-for="notification in notifications" :key="notification.id">
-            <div x-transition
-                class="px-6 py-4 rounded-md shadow-lg text-white cursor-pointer"
+            <div x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 transform translate-x-6"
+                x-transition:enter-end="opacity-100 transform translate-x-0"
+                x-transition:leave="transition ease-in duration-300"
+                x-transition:leave-start="opacity-100 transform translate-x-0"
+                x-transition:leave-end="opacity-0 transform translate-x-6"
+                class="px-6 py-4 rounded-lg shadow-lg text-white cursor-pointer backdrop-blur-sm"
                 :class="{
-                    'bg-green-500': notification.type === 'success',
-                    'bg-red-500': notification.type === 'error'
+                    'bg-green-500/90 border border-green-400': notification.type === 'success',
+                    'bg-red-500/90 border border-red-400': notification.type === 'error',
+                    'bg-blue-500/90 border border-blue-400': notification.type === 'info',
+                    'bg-yellow-500/90 border border-yellow-400': notification.type === 'warning'
                 }"
                 @click="removeNotification(notification.id)"
                 x-text="notification.message">
@@ -184,33 +127,130 @@ x-init="
         @yield('content')
     </main>
 
+    <!-- Scripts adicionales de las vistas -->
     @stack('scripts')
 
-    <!-- Script de inicialización de partículas -->
+    <!-- Script de inicialización de partículas (actualizado) -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('particles-container');
+            
+            // Detectar modo oscuro desde localStorage
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
             
             // Colores según modo
-            const colors = isDarkMode 
-                ? ['bg-primary-400', 'bg-primary-500', 'bg-primary-600']
-                : ['bg-blue-400', 'bg-blue-300', 'bg-blue-200'];
-
-            // Generar partículas
-            for (let i = 0; i < 100; i++) {
+            const darkModeColors = ['bg-primary-400', 'bg-primary-500', 'bg-primary-600'];
+            const lightModeColors = ['bg-blue-400', 'bg-blue-300', 'bg-blue-200'];
+            let colors = isDarkMode ? darkModeColors : lightModeColors;
+            
+            // Animaciones disponibles
+            const animations = ['animate-particle-float', 'animate-particle-drift', 'animate-pulse-slow'];
+            
+            // Generar partículas principales
+            for (let i = 0; i < 80; i++) {
                 const particle = document.createElement('div');
-                const size = `${Math.random() * 0.5 + 0.25}rem`;
+                const size = Math.random() * 8 + 2;
                 const color = colors[Math.floor(Math.random() * colors.length)];
+                const animation = animations[Math.floor(Math.random() * animations.length)];
+                const delay = Math.random() * 15000;
+                const opacity = (Math.random() * 0.4 + 0.3).toFixed(2);
                 
-                particle.className = `particle ${color} animate-float opacity-70`;
-                particle.style.width = size;
-                particle.style.height = size;
+                particle.className = `particle absolute ${color} ${animation} rounded-full`;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
                 particle.style.left = `${Math.random() * 100}%`;
                 particle.style.top = `${Math.random() * 100}%`;
-                particle.style.animationDelay = `${Math.random() * 10}s`;
+                particle.style.animationDelay = `${delay}ms`;
+                particle.style.opacity = opacity;
                 
                 container.appendChild(particle);
+            }
+            
+            // Generar partículas adicionales más pequeñas
+            for (let i = 0; i < 40; i++) {
+                const particle = document.createElement('div');
+                const size = Math.random() * 4 + 1;
+                const animation = 'animate-pulse-slow';
+                const delay = Math.random() * 20000;
+                const opacity = (Math.random() * 0.2 + 0.1).toFixed(2);
+                
+                particle.className = `particle absolute bg-white/20 ${animation} rounded-full`;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+                particle.style.animationDelay = `${delay}ms`;
+                particle.style.opacity = opacity;
+                
+                container.appendChild(particle);
+            }
+            
+            console.log('✅ Partículas de fondo inicializadas correctamente para árbitro');
+        });
+
+        // Función global para actualizar partículas cuando cambie el tema
+        function updateParticlesTheme(isDark) {
+            const particles = document.querySelectorAll('.particle');
+            const darkColors = ['bg-primary-400', 'bg-primary-500', 'bg-primary-600'];
+            const lightColors = ['bg-blue-400', 'bg-blue-300', 'bg-blue-200'];
+            const allColors = [...darkColors, ...lightColors];
+            
+            particles.forEach(particle => {
+                // Remover todos los colores existentes
+                allColors.forEach(color => particle.classList.remove(color));
+                
+                // Skip partículas blancas
+                if (particle.classList.contains('bg-white/20')) return;
+                
+                // Aplicar nuevos colores
+                const newColors = isDark ? darkColors : lightColors;
+                const randomColor = newColors[Math.floor(Math.random() * newColors.length)];
+                particle.classList.add(randomColor);
+            });
+        }
+
+        // Exponer función globalmente
+        window.updateParticlesTheme = updateParticlesTheme;
+
+        // Procesar notificaciones de Laravel al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Procesar errores de validación
+            const errorsTag = document.querySelector('meta[name="laravel-errors"]');
+            if (errorsTag) {
+                try {
+                    const errors = JSON.parse(errorsTag.content);
+                    errors.forEach(error => {
+                        if (window.showNotification) {
+                            window.showNotification('error', error);
+                        }
+                    });
+                } catch (e) {
+                    console.error('Error al procesar errores de Laravel:', e);
+                }
+            }
+
+            // Procesar mensajes de éxito
+            const successTag = document.querySelector('meta[name="laravel-success"]');
+            if (successTag && window.showNotification) {
+                window.showNotification('success', successTag.content);
+            }
+
+            // Procesar mensajes de error
+            const errorTag = document.querySelector('meta[name="laravel-error"]');
+            if (errorTag && window.showNotification) {
+                window.showNotification('error', errorTag.content);
+            }
+
+            // Procesar mensajes de advertencia
+            const warningTag = document.querySelector('meta[name="laravel-warning"]');
+            if (warningTag && window.showNotification) {
+                window.showNotification('warning', warningTag.content);
+            }
+
+            // Procesar mensajes de información
+            const infoTag = document.querySelector('meta[name="laravel-info"]');
+            if (infoTag && window.showNotification) {
+                window.showNotification('info', infoTag.content);
             }
         });
     </script>

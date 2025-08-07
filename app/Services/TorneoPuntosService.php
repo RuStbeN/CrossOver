@@ -129,59 +129,279 @@ class TorneoPuntosService
     }
 
     /**
+     * Verifica que hay suficiente capacidad en los días hábiles para todos los juegos
+     */
+    private function verificarCapacidadTorneo(Torneo $torneo, int $numJuegosNecesarios): void
+    {
+        $temporada = Temporada::find($torneo->temporada_id);
+        $diasDisponibles = $this->obtenerDiasHabilesEnRango($torneo, $temporada);
+        
+        if (empty($diasDisponibles)) {
+            throw new \Exception('No hay días hábiles disponibles en el rango del torneo');
+        }
+        
+        $capacidadTotal = 0;
+        foreach ($diasDisponibles as $dia) {
+            $horario = $this->obtenerHorarioDelDia($dia['fecha'], $dia['diasHabiles'], $temporada);
+            $duracionJornada = $horario['inicio']->diffInMinutes($horario['fin']);
+            $duracionJuego = $this->calcularDuracionTotalJuego($torneo) + $torneo->tiempo_entre_partidos_minutos;
+            $capacidadDia = floor($duracionJornada / $duracionJuego);
+            $capacidadTotal += $capacidadDia;
+        }
+        
+        if ($numJuegosNecesarios > $capacidadTotal) {
+            throw new \Exception(sprintf(
+                'No hay suficiente capacidad. Se necesitan %d slots de juego pero solo hay %d disponibles',
+                $numJuegosNecesarios,
+                $capacidadTotal
+            ));
+        }
+        
+        Log::info('Capacidad del torneo verificada', [
+            'juegos_necesarios' => $numJuegosNecesarios,
+            'capacidad_total' => $capacidadTotal,
+            'dias_disponibles' => count($diasDisponibles)
+        ]);
+    }
+
+    /**
+     * Obtiene todos los días hábiles dentro del rango del torneo
+     */
+    private function obtenerDiasHabilesEnRango(Torneo $torneo, Temporada $temporada): array
+    {
+        $diasHabiles = $this->obtenerDiasHabiles($temporada->id);
+        $fechaInicio = Carbon::parse($torneo->fecha_inicio);
+        $fechaFin = Carbon::parse($torneo->fecha_fin ?? $temporada->fecha_fin); // Usar fecha fin de temporada si no hay en torneo
+
+        // Encontrar el primer día hábil a partir de la fecha de inicio
+        $primerDiaHabil = $this->encontrarSiguienteDiaHabil($fechaInicio, $diasHabiles);
+
+        $diasDisponibles = [];
+        $fechaActual = $primerDiaHabil->copy();
+
+        while ($fechaActual->lte($fechaFin)) {
+            $diaSemana = $fechaActual->dayOfWeekIso;
+
+            if ($diasHabiles->has($diaSemana)) {
+                $diasDisponibles[] = [
+                    'fecha' => $fechaActual->copy(),
+                    'dia_semana' => $diaSemana,
+                    'diasHabiles' => $diasHabiles
+                ];
+            }
+
+            // Avanzar al siguiente día
+            $fechaActual->addDay();
+
+            // Saltar días no hábiles
+            while ($fechaActual->lte($fechaFin) && !$diasHabiles->has($fechaActual->dayOfWeekIso)) {
+                $fechaActual->addDay();
+            }
+        }
+
+        Log::info('Días hábiles encontrados en rango', [
+            'fecha_inicio' => $fechaInicio->format('Y-m-d'),
+            'fecha_fin' => $fechaFin->format('Y-m-d'),
+            'primer_dia_habil' => $primerDiaHabil->format('Y-m-d'),
+            'total_dias_disponibles' => count($diasDisponibles),
+            'dias' => array_map(fn($d) => $d['fecha']->format('Y-m-d (D)'), $diasDisponibles)
+        ]);
+
+        return $diasDisponibles;
+    }
+
+
+    /**
+     * Genera emparejamientos todos contra todos con orden aleatorio
+     */
+    private function generarEmparejamientos($equipos): array
+    {
+        $equiposArray = $equipos->toArray();
+        $emparejamientos = [];
+        
+        for ($i = 0; $i < count($equiposArray); $i++) {
+            for ($j = $i + 1; $j < count($equiposArray); $j++) {
+                $emparejamientos[] = [
+                    'local' => $equiposArray[$i]['id'],
+                    'visitante' => $equiposArray[$j]['id'],
+                    'equipo_local_nombre' => $equiposArray[$i]['nombre'],
+                    'equipo_visitante_nombre' => $equiposArray[$j]['nombre']
+                ];
+            }
+        }
+        
+        // Mezclar para mejor distribución
+        shuffle($emparejamientos);
+        
+        return $emparejamientos;
+    }
+
+    /**
      * Crea juegos en formato todos contra todos con programación inteligente
      */
     private function crearJuegosTodosContraTodos(Torneo $torneo, $equipos)
     {
-        Log::info('Creando juegos todos contra todos', [
+        Log::info('Creando juegos todos contra todos (versión mejorada)', [
             'torneo_id' => $torneo->id,
             'total_equipos' => $equipos->count()
         ]);
 
-        $equiposArray = $equipos->toArray();
-        $juegosCreados = 0;
+        // 1. Generar todos los emparejamientos necesarios
+        $emparejamientos = $this->generarEmparejamientos($equipos);
+        $totalJuegos = count($emparejamientos);
         
-        // Obtener la temporada para conocer los horarios
+        // 2. Verificar capacidad antes de empezar
+        $this->verificarCapacidadTorneo($torneo, $totalJuegos);
+        
+        // 3. Obtener días hábiles dentro del rango del torneo
         $temporada = Temporada::find($torneo->temporada_id);
+        $diasDisponibles = $this->obtenerDiasHabilesEnRango($torneo, $temporada);
         
-        // Inicializar programación
-        $programacionJuegos = $this->inicializarProgramacion($torneo, $temporada);
+        // 4. Calcular juegos por día (distribución equitativa)
+        $juegosPorDia = ceil($totalJuegos / count($diasDisponibles));
         
-        // Generar todos los posibles emparejamientos
-        for ($i = 0; $i < count($equiposArray); $i++) {
-            for ($j = $i + 1; $j < count($equiposArray); $j++) {
+        Log::debug('Distribución de juegos calculada', [
+            'total_juegos' => $totalJuegos,
+            'dias_disponibles' => count($diasDisponibles),
+            'juegos_por_dia' => $juegosPorDia
+        ]);
+        
+        // 5. Programar los juegos
+        $juegosCreados = 0;
+        foreach ($diasDisponibles as $dia) {
+            $juegosEsteDia = 0;
+            $horario = $this->obtenerHorarioDelDia($dia['fecha'], $dia['diasHabiles'], $temporada);
+            $horaActual = $horario['inicio']->copy();
+            
+            Log::debug('Programando juegos para día', [
+                'fecha' => $dia['fecha']->format('Y-m-d'),
+                'dia_semana' => $dia['dia_semana'],
+                'horario_inicio' => $horario['inicio']->format('H:i'),
+                'horario_fin' => $horario['fin']->format('H:i')
+            ]);
+            
+            while ($juegosEsteDia < $juegosPorDia && !empty($emparejamientos)) {
+                $emparejamiento = array_shift($emparejamientos);
                 
-                // Obtener la siguiente fecha y hora disponible
-                $siguienteFechaHora = $this->obtenerSiguienteFechaHora($programacionJuegos, $torneo, $temporada);
+                // Calcular si el juego cabe en el horario actual
+                $duracionTotal = $this->calcularDuracionTotalJuego($torneo);
+                $horaFinJuego = $horaActual->copy()->addMinutes($duracionTotal);
                 
-                $this->crearJuego(
-                    $torneo, 
-                    $equiposArray[$i]['id'], 
-                    $equiposArray[$j]['id'],
-                    $siguienteFechaHora['fecha'],
-                    $siguienteFechaHora['hora'],
-                    'Fase Regular'
-                );
-                
-                // Actualizar programación para el siguiente juego
-                $this->actualizarProgramacion($programacionJuegos, $torneo, $temporada);
-                
-                $juegosCreados++;
-                
-                Log::info('Juego todos contra todos creado', [
-                    'equipo_local' => $equiposArray[$i]['nombre'],
-                    'equipo_visitante' => $equiposArray[$j]['nombre'],
-                    'fecha' => $siguienteFechaHora['fecha']->format('Y-m-d'),
-                    'hora' => $siguienteFechaHora['hora']->format('H:i'),
-                    'fase' => 'Fase Regular'
-                ]);
+                if ($horaFinJuego->lte($horario['fin'])) {
+                    // Crear el juego
+                    $juego = $this->crearJuego(
+                        $torneo,
+                        $emparejamiento['local'],
+                        $emparejamiento['visitante'],
+                        $dia['fecha'],
+                        $horaActual,
+                        'Fase Regular'
+                    );
+                    
+                    Log::info('Juego programado', [
+                        'juego_id' => $juego->id,
+                        'fecha' => $dia['fecha']->format('Y-m-d'),
+                        'hora' => $horaActual->format('H:i'),
+                        'equipo_local' => $emparejamiento['equipo_local_nombre'],
+                        'equipo_visitante' => $emparejamiento['equipo_visitante_nombre']
+                    ]);
+                    
+                    // Avanzar el horario
+                    $horaActual->addMinutes($duracionTotal + $torneo->tiempo_entre_partidos_minutos);
+                    $juegosEsteDia++;
+                    $juegosCreados++;
+                } else {
+                    // No cabe más en este día, devolver el emparejamiento al array
+                    array_unshift($emparejamientos, $emparejamiento);
+                    break;
+                }
             }
+            
+            Log::info('Juegos programados para día', [
+                'fecha' => $dia['fecha']->format('Y-m-d'),
+                'juegos_programados' => $juegosEsteDia,
+                'juegos_restantes' => count($emparejamientos)
+            ]);
+        }
+        
+        // 6. Manejar emparejamientos restantes (si los hay)
+        if (!empty($emparejamientos)) {
+            Log::warning('Quedan emparejamientos por programar', [
+                'emparejamientos_restantes' => count($emparejamientos)
+            ]);
+            $this->distribuirJuegosRestantes($torneo, $emparejamientos, $temporada);
         }
         
         Log::info('Juegos todos contra todos creados', [
             'torneo_id' => $torneo->id,
             'total_juegos' => $juegosCreados,
-            'juegos_por_equipo' => count($equiposArray) - 1
+            'juegos_por_equipo' => $equipos->count() - 1
+        ]);
+        
+        return $juegosCreados;
+    }
+
+    /**
+     * Distribuye juegos que no cupieron en la distribución inicial
+     */
+    private function distribuirJuegosRestantes(Torneo $torneo, array $emparejamientos, Temporada $temporada): void
+    {
+        Log::info('Intentando distribuir juegos restantes', [
+            'juegos_restantes' => count($emparejamientos)
+        ]);
+        
+        $diasDisponibles = $this->obtenerDiasHabilesEnRango($torneo, $temporada);
+        $juegosCreados = 0;
+        
+        foreach ($diasDisponibles as $dia) {
+            if (empty($emparejamientos)) break;
+            
+            $horario = $this->obtenerHorarioDelDia($dia['fecha'], $dia['diasHabiles'], $temporada);
+            $horaActual = $horario['inicio']->copy();
+            
+            while (!empty($emparejamientos)) {
+                $emparejamiento = $emparejamientos[0];
+                $duracionTotal = $this->calcularDuracionTotalJuego($torneo);
+                $horaFinJuego = $horaActual->copy()->addMinutes($duracionTotal);
+                
+                if ($horaFinJuego->lte($horario['fin'])) {
+                    // Crear el juego
+                    $juego = $this->crearJuego(
+                        $torneo,
+                        $emparejamiento['local'],
+                        $emparejamiento['visitante'],
+                        $dia['fecha'],
+                        $horaActual,
+                        'Fase Regular'
+                    );
+                    
+                    Log::info('Juego restante programado', [
+                        'juego_id' => $juego->id,
+                        'fecha' => $dia['fecha']->format('Y-m-d'),
+                        'hora' => $horaActual->format('H:i'),
+                        'equipo_local' => $emparejamiento['equipo_local_nombre'],
+                        'equipo_visitante' => $emparejamiento['equipo_visitante_nombre']
+                    ]);
+                    
+                    // Avanzar el horario y quitar el emparejamiento
+                    $horaActual->addMinutes($duracionTotal + $torneo->tiempo_entre_partidos_minutos);
+                    array_shift($emparejamientos);
+                    $juegosCreados++;
+                } else {
+                    break; // Pasar al siguiente día
+                }
+            }
+        }
+        
+        if (!empty($emparejamientos)) {
+            Log::error('No se pudieron programar todos los juegos', [
+                'juegos_sin_programar' => count($emparejamientos)
+            ]);
+            throw new \Exception('No se pudieron programar todos los juegos dentro del rango de fechas');
+        }
+        
+        Log::info('Juegos restantes distribuidos', [
+            'juegos_creados' => $juegosCreados
         ]);
     }
 
@@ -377,7 +597,7 @@ class TorneoPuntosService
     /**
      * Obtiene el horario específico para un día, considerando horarios personalizados
      */
-    private function obtenerHorarioDelDia(Carbon $fecha, $diasHabiles, Temporada $temporada)
+    private function obtenerHorarioDelDia(Carbon $fecha, $diasHabiles, Temporada $temporada): array
     {
         $diaSemana = $fecha->dayOfWeekIso;
         $diaHabil = $diasHabiles->get($diaSemana);
@@ -386,21 +606,45 @@ class TorneoPuntosService
             throw new \Exception("El día {$fecha->format('Y-m-d')} no es un día hábil válido");
         }
         
-        // Usar horarios específicos del día si están definidos, sino usar los de la temporada
+        // Horarios por defecto de la temporada
+        $horarioInicioDefault = Carbon::parse($temporada->horario_inicio);
+        $horarioFinDefault = Carbon::parse($temporada->horario_fin);
+        
+        // Determinar horarios para este día
         $horarioInicio = $diaHabil->horario_inicio 
             ? Carbon::parse($diaHabil->horario_inicio)
-            : Carbon::parse($temporada->horario_inicio);
+            : $horarioInicioDefault->copy();
             
-        $horarioFin = $diaHabil->horario_fin 
+        $horarioFin = $diaHabil->horario_fin
             ? Carbon::parse($diaHabil->horario_fin)
-            : Carbon::parse($temporada->horario_fin);
+            : $horarioFinDefault->copy();
         
-        Log::debug('Horario obtenido para el día', [
+        // Validar coherencia de horarios
+        if ($horarioInicio->gte($horarioFin)) {
+            Log::warning('Horario inválido para día, usando horario por defecto', [
+                'fecha' => $fecha->format('Y-m-d'),
+                'horario_inicio' => $horarioInicio->format('H:i'),
+                'horario_fin' => $horarioFin->format('H:i')
+            ]);
+            $horarioInicio = $horarioInicioDefault->copy();
+            $horarioFin = $horarioFinDefault->copy();
+        }
+        
+        // Asegurar que el horario no exceda el horario por defecto
+        if ($horarioInicio->lt($horarioInicioDefault)) {
+            $horarioInicio = $horarioInicioDefault->copy();
+        }
+        
+        if ($horarioFin->gt($horarioFinDefault)) {
+            $horarioFin = $horarioFinDefault->copy();
+        }
+        
+        Log::debug('Horario determinado para día', [
             'fecha' => $fecha->format('Y-m-d'),
             'dia_semana' => $diaSemana,
             'horario_inicio' => $horarioInicio->format('H:i'),
             'horario_fin' => $horarioFin->format('H:i'),
-            'es_personalizado' => !is_null($diaHabil->horario_inicio)
+            'es_personalizado' => $diaHabil->horario_inicio !== null
         ]);
         
         return [

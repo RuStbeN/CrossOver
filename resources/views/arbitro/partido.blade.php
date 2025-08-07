@@ -365,7 +365,7 @@
             jugadorElements.forEach(element => {
                 const puntosElement = element.querySelector('.puntos-jugador');
                 if (puntosElement) {
-                    puntosElement.textContent = data.puntos_jugador + ' pts';
+                    puntosElement.textContent = data.puntos_jugador ;
                 }
             });
         }
