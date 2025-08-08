@@ -65,16 +65,8 @@
                 </div>
                 @endif
                 
-                <!-- Columna 2: Temporizador compacto -->
+                <!-- Columna 2: Reordenada como solicitado - Cuarto, Temporizador, Estado -->
                 <div class="flex items-center space-x-4">
-                    <!-- Temporizador estilo deportivo compacto -->
-                    <div class="bg-black dark:bg-gray-900 rounded-lg shadow-lg border-2 border-gray-800 dark:border-gray-700 px-4 py-1">
-                        <div class="text-3xl font-mono font-black text-green-400 dark:text-green-300 tracking-wider leading-none" id="temporizador" style="text-shadow: 0 0 15px rgba(34, 197, 94, 0.5);">
-                            {{ sprintf('%02d:%02d', floor(($juego->tiempo_restante ?? $juego->duracion_cuarto * 60) / 60), ($juego->tiempo_restante ?? $juego->duracion_cuarto * 60) % 60) }}
-                        </div>
-                        <div class="h-0.5 bg-gradient-to-r from-green-400 to-green-500 dark:from-green-300 dark:to-green-400 rounded-full"></div>
-                    </div>
-                    
                     <!-- Cuarto actual compacto -->
                     <div id="cuarto-actual">
                         @if($juego->en_descanso ?? false)
@@ -92,6 +84,14 @@
                                 </div>
                             </div>
                         @endif
+                    </div>
+                    
+                    <!-- Temporizador estilo deportivo compacto -->
+                    <div class="bg-black dark:bg-gray-900 rounded-lg shadow-lg border-2 border-gray-800 dark:border-gray-700 px-4 py-1">
+                        <div class="text-3xl font-mono font-black text-green-400 dark:text-green-300 tracking-wider leading-none" id="temporizador" style="text-shadow: 0 0 15px rgba(34, 197, 94, 0.5);">
+                            {{ sprintf('%02d:%02d', floor(($juego->tiempo_restante ?? $juego->duracion_cuarto * 60) / 60), ($juego->tiempo_restante ?? $juego->duracion_cuarto * 60) % 60) }}
+                        </div>
+                        <div class="h-0.5 bg-gradient-to-r from-green-400 to-green-500 dark:from-green-300 dark:to-green-400 rounded-full"></div>
                     </div>
                     
                     <!-- Estado del tiempo compacto -->
