@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
-use App\Services\TorneoPuntosService;
+use App\Services\ResultadosPorPuntos;
 
 
 class ArbitroDashboardController extends Controller
@@ -1174,7 +1174,7 @@ class ArbitroDashboardController extends Controller
 
     
     public function __construct(
-        private TorneoPuntosService $torneoService
+        private ResultadosPorPuntos $torneoService
     ) {}
 
     public function finalizarPartido(Request $request, $juego)
@@ -1191,7 +1191,7 @@ class ArbitroDashboardController extends Controller
                 try {
                     $this->torneoService->procesarResultadoJuego($juego);
                 } catch (\Exception $e) {
-                    Log::error("Error al procesar resultado en TorneoPuntosService", [
+                    Log::error("Error al procesar resultado en ResultadosPorPuntos", [
                         'error' => $e->getMessage(),
                         'trace' => $e->getTraceAsString()
                     ]);
