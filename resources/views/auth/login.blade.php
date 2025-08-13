@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }, 20000);
 
-    console.log('✨ Elementos decorativos grandes generados');
+    //console.log('✨ Elementos decorativos grandes generados');
 });
 </script>
 

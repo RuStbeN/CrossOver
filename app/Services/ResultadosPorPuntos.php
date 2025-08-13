@@ -16,7 +16,7 @@ class ResultadosPorPuntos
 {
 
 
-/**
+    /**
      * Actualiza toda la clasificación después de un juego
      */
     public function procesarResultadoJuego(Juego $juego): void

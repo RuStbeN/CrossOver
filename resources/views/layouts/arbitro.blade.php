@@ -185,7 +185,7 @@ x-init="
                 container.appendChild(particle);
             }
             
-            console.log('✅ Partículas de fondo inicializadas correctamente para árbitro');
+            //console.log('✅ Partículas de fondo inicializadas correctamente para árbitro');
         });
 
         // Función global para actualizar partículas cuando cambie el tema

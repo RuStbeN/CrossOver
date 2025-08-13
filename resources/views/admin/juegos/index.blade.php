@@ -66,7 +66,7 @@
             document.body.style.overflow = 'auto';
         },
         editJuego(juego) {
-            console.log('Datos del juego:', juego);
+            //console.log('Datos del juego:', juego);
             
             this.formData = {
                 // Información general
@@ -92,7 +92,7 @@
                 mesa_control_id: juego.mesa_control_id || ''
             };
             
-            console.log('FormData después de asignar:', this.formData);
+            //console.log('FormData después de asignar:', this.formData);
             
             this.editMode = true;
             this.editingJuego = juego;
@@ -200,7 +200,7 @@
                 </div>
 
                 <!-- Contenido del modal -->
-                <div class="p-6">
+                <div class="flex-1 overflow-y-auto p-6">
                     <template x-if="selectedJuego">
                         @include('admin.juegos.partials.modal.informacion')
                     </template>

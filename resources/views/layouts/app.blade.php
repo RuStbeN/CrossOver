@@ -183,7 +183,7 @@ x-init="
                 container.appendChild(particle);
             }
             
-            console.log('✅ Partículas de fondo inicializadas correctamente');
+            //console.log('✅ Partículas de fondo inicializadas correctamente');
         });
 
         // Función global para actualizar partículas cuando cambie el tema

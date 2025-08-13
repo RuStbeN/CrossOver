@@ -18,7 +18,7 @@ Alpine.start();
 
 // Inicialización global cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 App.js loaded successfully');
+    //console.log('🚀 App.js loaded successfully');
     
     // Aquí puedes inicializar otros componentes globales
     // Ejemplo de validador para formularios de registro

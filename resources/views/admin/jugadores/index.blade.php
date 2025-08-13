@@ -89,7 +89,7 @@
             document.body.style.overflow = 'auto';
         },
         editJugador(jugador) {
-            console.log('Datos del jugador:', jugador);
+            //console.log('Datos del jugador:', jugador);
             
             // Obtener la relación actual del jugador con el equipo
             let relacionEquipo = jugador.equipos_actual || {};
