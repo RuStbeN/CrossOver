@@ -11,7 +11,7 @@ return new class extends Migration {
             $table->string('nombre', 150);
             $table->text('direccion')->nullable();
             $table->integer('capacidad')->unsigned()->nullable();
-            $table->enum('tipo_superficie', ['Sintética', 'Natural', 'Cemento', 'Parquet', 'Otros'])->default('Sintética');
+            $table->enum('tipo_superficie', ['Sintética', 'Natural', 'Cemento', 'Parquet', 'Duela', 'Otros'])->default('Sintética');
             $table->boolean('techada')->default(false);
             $table->boolean('iluminacion')->default(false);
             $table->text('equipamiento')->nullable();

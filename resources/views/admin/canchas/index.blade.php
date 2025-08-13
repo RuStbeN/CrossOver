@@ -10,9 +10,9 @@
             nombre: '',
             direccion: '',
             capacidad: '',
-            tipo_superficie: 'cesped',
-            techada: '1',
-            iluminacion: '1',
+            tipo_superficie: '',
+            techada: '',
+            iluminacion: '',
             equipamiento: '',
             tarifa_por_hora: '',
             activo: '1'
@@ -22,9 +22,9 @@
                 nombre: '',
                 direccion: '',
                 capacidad: '',
-                tipo_superficie: 'cesped',
-                techada: '1',
-                iluminacion: '1',
+                tipo_superficie: '',
+                techada: '',
+                iluminacion: '',
                 equipamiento: '',
                 tarifa_por_hora: '',
                 activo: '1'
@@ -137,6 +137,7 @@
                                 <option value="Natural">Natural</option>
                                 <option value="Cemento">Cemento</option>
                                 <option value="Parquet">Parquet</option>
+                                <option value="Duela">Duela</option>
                                 <option value="Otros">Otros</option>
                             </select>
                         </div>
