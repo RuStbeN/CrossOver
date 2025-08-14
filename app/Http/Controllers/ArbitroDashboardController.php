@@ -8,6 +8,7 @@ use App\Models\Equipo;
 use App\Models\EquipoJugador;
 use App\Models\Jugador;
 use App\Models\JuegoAlineacion; 
+use App\Models\Torneo; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 use App\Services\ResultadosPorPuntos;
 
 
@@ -24,7 +26,7 @@ class ArbitroDashboardController extends Controller
     /**
      * Dashboard del árbitro
      */
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $user = Auth::user();
         $arbitro = Arbitro::where('user_id', $user->id)->first();
@@ -39,10 +41,16 @@ class ArbitroDashboardController extends Controller
                 ->with('warning', 'Debes cambiar tu contraseña antes de continuar.');
         }
 
-        // Obtener solo los partidos donde este árbitro sea el de mesa de control
-        $partidos = Juego::where('mesa_control_id', $arbitro->id)
-            ->with(['equipoLocal', 'equipoVisitante', 'cancha', 'torneo'])
-            ->orderBy('fecha', 'desc')
+        // Query base para partidos donde este árbitro es mesa de control
+        $query = Juego::where('mesa_control_id', $arbitro->id)
+            ->with(['equipoLocal', 'equipoVisitante', 'cancha', 'torneo']);
+
+        // Aplicar filtros
+        $this->aplicarFiltros($query, $request);
+
+        // Obtener partidos con paginación
+        $partidos = $query->orderBy('fecha', 'desc')
+            ->orderBy('hora', 'desc')
             ->paginate(10);
 
         // Estadísticas básicas (solo como mesa de control)
@@ -54,15 +62,67 @@ class ArbitroDashboardController extends Controller
             ->whereIn('estado', ['Programado', 'En Curso'])
             ->count();
 
+        // Obtener torneos para el filtro
+        $torneos = Torneo::whereHas('juegos', function($query) use ($arbitro) {
+            $query->where('mesa_control_id', $arbitro->id);
+        })->orderBy('nombre')->get();
+
         return view('arbitro.dashboard', compact(
             'arbitro', 
             'partidos', 
             'totalPartidos', 
             'partidosCompletados', 
-            'partidosPendientes'
+            'partidosPendientes',
+            'torneos'
         ));
     }
 
+    /**
+     * Aplicar filtros a la query
+     */
+    private function aplicarFiltros($query, Request $request)
+    {
+        // Filtro por fecha - Por defecto mostrar partidos de hoy solo si no hay otros filtros
+        $fecha = $request->get('fecha');
+        
+        // Si no hay filtro de fecha y es la primera carga, usar fecha de hoy
+        if (!$fecha && !$request->hasAny(['torneo', 'equipo', 'estado'])) {
+            $fecha = Carbon::now('America/Mexico_City')->format('Y-m-d');
+        }
+        
+        if ($fecha) {
+            try {
+                // Validar que la fecha esté en formato correcto
+                $fechaCarbon = Carbon::createFromFormat('Y-m-d', $fecha);
+                $query->whereDate('fecha', $fechaCarbon->format('Y-m-d'));
+            } catch (\Exception $e) {
+                // Si el formato es incorrecto, usar fecha de hoy
+                $query->whereDate('fecha', Carbon::now('America/Mexico_City')->format('Y-m-d'));
+            }
+        }
+
+        // Filtro por torneo
+        if ($request->filled('torneo')) {
+            $query->where('torneo_id', $request->get('torneo'));
+        }
+
+        // Filtro por equipo (busca en local y visitante)
+        if ($request->filled('equipo')) {
+            $equipoTerm = $request->get('equipo');
+            $query->where(function($q) use ($equipoTerm) {
+                $q->whereHas('equipoLocal', function($subQ) use ($equipoTerm) {
+                    $subQ->where('nombre', 'like', '%' . $equipoTerm . '%');
+                })->orWhereHas('equipoVisitante', function($subQ) use ($equipoTerm) {
+                    $subQ->where('nombre', 'like', '%' . $equipoTerm . '%');
+                });
+            });
+        }
+
+        // Filtro por estado
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->get('estado'));
+        }
+    }
 
     /**
      * Mostrar formulario para cambiar contraseña
