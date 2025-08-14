@@ -500,18 +500,31 @@
             </div>
             
             <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Cabeceras de equipos -->
+                <div class="grid grid-cols-2 gap-8 mb-8 text-center">
+                    <div class="border-b-2 border-blue-500 pb-3">
+                        <h4 class="font-bold text-xl text-blue-600 dark:text-blue-400">{{ $juego->equipoLocal->nombre }}</h4>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">EQUIPO LOCAL</span>
+                    </div>
+                    <div class="border-b-2 border-red-500 pb-3">
+                        <h4 class="font-bold text-xl text-red-600 dark:text-red-400">{{ $juego->equipoVisitante->nombre }}</h4>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">EQUIPO VISITANTE</span>
+                    </div>
+                </div>
+
+                <!-- Estadísticas principales -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <!-- Puntos -->
                     <div class="text-center">
                         <h4 class="font-bold text-gray-800 dark:text-white mb-4">Puntos Totales</h4>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center py-2">
                                 <span class="text-blue-600 dark:text-blue-400 font-medium">{{ $juego->equipoLocal->nombre }}</span>
-                                <span class="font-bold text-blue-600 dark:text-blue-400">{{ $totalesLocal['puntos'] }}</span>
+                                <span class="font-bold text-2xl text-blue-600 dark:text-blue-400">{{ $totalesLocal['puntos'] }}</span>
                             </div>
-                            <div class="flex justify-between items-center">
+                            <div class="flex justify-between items-center py-2 border-t border-gray-200 dark:border-dark-600">
                                 <span class="text-red-600 dark:text-red-400 font-medium">{{ $juego->equipoVisitante->nombre }}</span>
-                                <span class="font-bold text-red-600 dark:text-red-400">{{ $totalesVisitante['puntos'] }}</span>
+                                <span class="font-bold text-2xl text-red-600 dark:text-red-400">{{ $totalesVisitante['puntos'] }}</span>
                             </div>
                         </div>
                     </div>
@@ -519,14 +532,14 @@
                     <!-- Rebotes -->
                     <div class="text-center">
                         <h4 class="font-bold text-gray-800 dark:text-white mb-4">Rebotes Totales</h4>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center py-2">
                                 <span class="text-blue-600 dark:text-blue-400 font-medium">Local</span>
-                                <span class="font-bold text-blue-600 dark:text-blue-400">{{ $totalesLocal['rebotes_totales'] }}</span>
+                                <span class="font-bold text-2xl text-blue-600 dark:text-blue-400">{{ $totalesLocal['rebotes_totales'] }}</span>
                             </div>
-                            <div class="flex justify-between items-center">
+                            <div class="flex justify-between items-center py-2 border-t border-gray-200 dark:border-dark-600">
                                 <span class="text-red-600 dark:text-red-400 font-medium">Visitante</span>
-                                <span class="font-bold text-red-600 dark:text-red-400">{{ $totalesVisitante['rebotes_totales'] }}</span>
+                                <span class="font-bold text-2xl text-red-600 dark:text-red-400">{{ $totalesVisitante['rebotes_totales'] }}</span>
                             </div>
                         </div>
                     </div>
@@ -534,14 +547,14 @@
                     <!-- Asistencias -->
                     <div class="text-center">
                         <h4 class="font-bold text-gray-800 dark:text-white mb-4">Asistencias</h4>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center py-2">
                                 <span class="text-blue-600 dark:text-blue-400 font-medium">Local</span>
-                                <span class="font-bold text-blue-600 dark:text-blue-400">{{ $totalesLocal['asistencias'] }}</span>
+                                <span class="font-bold text-2xl text-blue-600 dark:text-blue-400">{{ $totalesLocal['asistencias'] }}</span>
                             </div>
-                            <div class="flex justify-between items-center">
+                            <div class="flex justify-between items-center py-2 border-t border-gray-200 dark:border-dark-600">
                                 <span class="text-red-600 dark:text-red-400 font-medium">Visitante</span>
-                                <span class="font-bold text-red-600 dark:text-red-400">{{ $totalesVisitante['asistencias'] }}</span>
+                                <span class="font-bold text-2xl text-red-600 dark:text-red-400">{{ $totalesVisitante['asistencias'] }}</span>
                             </div>
                         </div>
                     </div>
@@ -549,79 +562,104 @@
                     <!-- Robos y Bloqueos -->
                     <div class="text-center">
                         <h4 class="font-bold text-gray-800 dark:text-white mb-4">Defensa</h4>
-                        <div class="space-y-2">
-                            <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">Robos</div>
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-blue-600 dark:text-blue-400 font-medium">{{ $totalesLocal['robos'] }}</span>
-                                <span class="text-red-600 dark:text-red-400 font-medium">{{ $totalesVisitante['robos'] }}</span>
+                        <div class="space-y-3">
+                            <div class="mb-3">
+                                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">Robos</div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-blue-600 dark:text-blue-400 font-bold text-lg">{{ $totalesLocal['robos'] }}</span>
+                                    <span class="text-gray-400 text-sm">vs</span>
+                                    <span class="text-red-600 dark:text-red-400 font-bold text-lg">{{ $totalesVisitante['robos'] }}</span>
+                                </div>
                             </div>
-                            <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">Bloqueos</div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-blue-600 dark:text-blue-400 font-medium">{{ $totalesLocal['bloqueos'] }}</span>
-                                <span class="text-red-600 dark:text-red-400 font-medium">{{ $totalesVisitante['bloqueos'] }}</span>
+                            <div class="pt-3 border-t border-gray-200 dark:border-dark-600">
+                                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">Bloqueos</div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-blue-600 dark:text-blue-400 font-bold text-lg">{{ $totalesLocal['bloqueos'] }}</span>
+                                    <span class="text-gray-400 text-sm">vs</span>
+                                    <span class="text-red-600 dark:text-red-400 font-bold text-lg">{{ $totalesVisitante['bloqueos'] }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Porcentajes de tiro -->
-                <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="text-center">
-                        <h4 class="font-bold text-gray-800 dark:text-white mb-4">Tiros Libres</h4>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-blue-600 dark:text-blue-400 font-medium">Local</span>
-                                <span class="font-bold">
-                                    {{ $totalesLocal['tiros_libres_anotados'] }}/{{ $totalesLocal['tiros_libres_intentados'] }}
-                                    ({{ $totalesLocal['tiros_libres_intentados'] > 0 ? round(($totalesLocal['tiros_libres_anotados'] / $totalesLocal['tiros_libres_intentados']) * 100, 1) : 0 }}%)
-                                </span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-red-600 dark:text-red-400 font-medium">Visitante</span>
-                                <span class="font-bold">
-                                    {{ $totalesVisitante['tiros_libres_anotados'] }}/{{ $totalesVisitante['tiros_libres_intentados'] }}
-                                    ({{ $totalesVisitante['tiros_libres_intentados'] > 0 ? round(($totalesVisitante['tiros_libres_anotados'] / $totalesVisitante['tiros_libres_intentados']) * 100, 1) : 0 }}%)
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-center">
-                        <h4 class="font-bold text-gray-800 dark:text-white mb-4">Tiros 2 Puntos</h4>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-blue-600 dark:text-blue-400 font-medium">Local</span>
-                                <span class="font-bold">
-                                    {{ $totalesLocal['tiros_2pts_anotados'] }}/{{ $totalesLocal['tiros_2pts_intentados'] }}
-                                    ({{ $totalesLocal['tiros_2pts_intentados'] > 0 ? round(($totalesLocal['tiros_2pts_anotados'] / $totalesLocal['tiros_2pts_intentados']) * 100, 1) : 0 }}%)
-                                </span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-red-600 dark:text-red-400 font-medium">Visitante</span>
-                                <span class="font-bold">
-                                    {{ $totalesVisitante['tiros_2pts_anotados'] }}/{{ $totalesVisitante['tiros_2pts_intentados'] }}
-                                    ({{ $totalesVisitante['tiros_2pts_intentados'] > 0 ? round(($totalesVisitante['tiros_2pts_anotados'] / $totalesVisitante['tiros_2pts_intentados']) * 100, 1) : 0 }}%)
-                                </span>
+                <div class="mt-12 pt-8 border-t border-gray-300 dark:border-dark-600">
+                    <h4 class="font-bold text-lg text-gray-800 dark:text-white text-center mb-8">Eficiencia de Tiro</h4>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <!-- Tiros Libres -->
+                        <div class="text-center">
+                            <h5 class="font-bold text-gray-800 dark:text-white mb-6">Tiros Libres</h5>
+                            <div class="space-y-4">
+                                <div class="py-3">
+                                    <div class="text-blue-600 dark:text-blue-400 font-medium mb-1">{{ $juego->equipoLocal->nombre }}</div>
+                                    <div class="font-bold text-lg text-gray-800 dark:text-white">
+                                        {{ $totalesLocal['tiros_libres_anotados'] }}/{{ $totalesLocal['tiros_libres_intentados'] }}
+                                        <span class="text-sm ml-2 text-gray-500 dark:text-gray-400">
+                                            ({{ $totalesLocal['tiros_libres_intentados'] > 0 ? round(($totalesLocal['tiros_libres_anotados'] / $totalesLocal['tiros_libres_intentados']) * 100, 1) : 0 }}%)
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="py-3 border-t border-gray-200 dark:border-dark-600">
+                                    <div class="text-red-600 dark:text-red-400 font-medium mb-1">{{ $juego->equipoVisitante->nombre }}</div>
+                                    <div class="font-bold text-lg text-gray-800 dark:text-white">
+                                        {{ $totalesVisitante['tiros_libres_anotados'] }}/{{ $totalesVisitante['tiros_libres_intentados'] }}
+                                        <span class="text-sm ml-2 text-gray-500 dark:text-gray-400">
+                                            ({{ $totalesVisitante['tiros_libres_intentados'] > 0 ? round(($totalesVisitante['tiros_libres_anotados'] / $totalesVisitante['tiros_libres_intentados']) * 100, 1) : 0 }}%)
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="text-center">
-                        <h4 class="font-bold text-gray-800 dark:text-white mb-4">Tiros 3 Puntos</h4>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-blue-600 dark:text-blue-400 font-medium">Local</span>
-                                <span class="font-bold">
-                                    {{ $totalesLocal['tiros_3pts_anotados'] }}/{{ $totalesLocal['tiros_3pts_intentados'] }}
-                                    ({{ $totalesLocal['tiros_3pts_intentados'] > 0 ? round(($totalesLocal['tiros_3pts_anotados'] / $totalesLocal['tiros_3pts_intentados']) * 100, 1) : 0 }}%)
-                                </span>
+                        <!-- Tiros 2 Puntos -->
+                        <div class="text-center">
+                            <h5 class="font-bold text-gray-800 dark:text-white mb-6">Tiros 2 Puntos</h5>
+                            <div class="space-y-4">
+                                <div class="py-3">
+                                    <div class="text-blue-600 dark:text-blue-400 font-medium mb-1">{{ $juego->equipoLocal->nombre }}</div>
+                                    <div class="font-bold text-lg text-gray-800 dark:text-white">
+                                        {{ $totalesLocal['tiros_2pts_anotados'] }}/{{ $totalesLocal['tiros_2pts_intentados'] }}
+                                        <span class="text-sm ml-2 text-gray-500 dark:text-gray-400">
+                                            ({{ $totalesLocal['tiros_2pts_intentados'] > 0 ? round(($totalesLocal['tiros_2pts_anotados'] / $totalesLocal['tiros_2pts_intentados']) * 100, 1) : 0 }}%)
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="py-3 border-t border-gray-200 dark:border-dark-600">
+                                    <div class="text-red-600 dark:text-red-400 font-medium mb-1">{{ $juego->equipoVisitante->nombre }}</div>
+                                    <div class="font-bold text-lg text-gray-800 dark:text-white">
+                                        {{ $totalesVisitante['tiros_2pts_anotados'] }}/{{ $totalesVisitante['tiros_2pts_intentados'] }}
+                                        <span class="text-sm ml-2 text-gray-500 dark:text-gray-400">
+                                            ({{ $totalesVisitante['tiros_2pts_intentados'] > 0 ? round(($totalesVisitante['tiros_2pts_anotados'] / $totalesVisitante['tiros_2pts_intentados']) * 100, 1) : 0 }}%)
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-red-600 dark:text-red-400 font-medium">Visitante</span>
-                                <span class="font-bold">
-                                    {{ $totalesVisitante['tiros_3pts_anotados'] }}/{{ $totalesVisitante['tiros_3pts_intentados'] }}
-                                    ({{ $totalesVisitante['tiros_3pts_intentados'] > 0 ? round(($totalesVisitante['tiros_3pts_anotados'] / $totalesVisitante['tiros_3pts_intentados']) * 100, 1) : 0 }}%)
-                                </span>
+                        </div>
+
+                        <!-- Tiros 3 Puntos -->
+                        <div class="text-center">
+                            <h5 class="font-bold text-gray-800 dark:text-white mb-6">Tiros 3 Puntos</h5>
+                            <div class="space-y-4">
+                                <div class="py-3">
+                                    <div class="text-blue-600 dark:text-blue-400 font-medium mb-1">{{ $juego->equipoLocal->nombre }}</div>
+                                    <div class="font-bold text-lg text-gray-800 dark:text-white">
+                                        {{ $totalesLocal['tiros_3pts_anotados'] }}/{{ $totalesLocal['tiros_3pts_intentados'] }}
+                                        <span class="text-sm ml-2 text-gray-500 dark:text-gray-400">
+                                            ({{ $totalesLocal['tiros_3pts_intentados'] > 0 ? round(($totalesLocal['tiros_3pts_anotados'] / $totalesLocal['tiros_3pts_intentados']) * 100, 1) : 0 }}%)
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="py-3 border-t border-gray-200 dark:border-dark-600">
+                                    <div class="text-red-600 dark:text-red-400 font-medium mb-1">{{ $juego->equipoVisitante->nombre }}</div>
+                                    <div class="font-bold text-lg text-gray-800 dark:text-white">
+                                        {{ $totalesVisitante['tiros_3pts_anotados'] }}/{{ $totalesVisitante['tiros_3pts_intentados'] }}
+                                        <span class="text-sm ml-2 text-gray-500 dark:text-gray-400">
+                                            ({{ $totalesVisitante['tiros_3pts_intentados'] > 0 ? round(($totalesVisitante['tiros_3pts_anotados'] / $totalesVisitante['tiros_3pts_intentados']) * 100, 1) : 0 }}%)
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
