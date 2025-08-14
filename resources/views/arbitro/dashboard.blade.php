@@ -390,8 +390,17 @@
                                                 </span>
                                                 
                                                 @if($partido->estado === 'Finalizado')
-                                                <div class="mt-2 text-lg font-bold text-gray-800 dark:text-white">
-                                                    {{ $partido->puntos_local ?? '0' }} - {{ $partido->puntos_visitante ?? '0' }}
+                                                <div class="mt-2">
+                                                    <div class="text-lg font-bold text-gray-800 dark:text-white mb-2">
+                                                        {{ $partido->puntos_local ?? '0' }} - {{ $partido->puntos_visitante ?? '0' }}
+                                                    </div>
+                                                    <a href="{{ route('arbitro.partido.resultados', ['juego' => $partido->id]) }}" 
+                                                    class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md font-medium transition-colors inline-flex items-center">
+                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                                        </svg>
+                                                        Ver Estadísticas
+                                                    </a>
                                                 </div>
                                                 @endif
                                             </div>
