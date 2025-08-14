@@ -16,10 +16,10 @@
             required>
         <option value="" disabled selected hidden>Selecciona un tipo de torneo</option>
         <option value="por_puntos">Por Puntos + Playoffs</option>
-        <option value="eliminacion_directa">Eliminación Directa</option>
-        <option value="doble_eliminacion">Doble Eliminación</option>
-        <option value="round_robin">Liga (Round Robin)</option>
-        <option value="grupos_eliminacion">Grupos + Eliminación</option>
+        <option value="eliminacion_directa" disabled>Eliminación Directa</option>
+        <option value="doble_eliminacion" disabled>Doble Eliminación</option>
+        <option value="round_robin" disabled>Liga (Round Robin)</option>
+        <option value="grupos_eliminacion" disabled>Grupos + Eliminación</option>
     </select>
 </div>
 
