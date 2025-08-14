@@ -30,8 +30,7 @@ return new class extends Migration
             $table->foreignId('temporada_id')->constrained('temporadas');
             $table->foreignId('categoria_id')->constrained('categorias');
             
-            // Configuración de cancha y tiempo
-            $table->foreignId('cancha_id')->constrained('canchas')->onDelete('cascade');
+            // Configuración de tiempo
             $table->unsignedSmallInteger('tiempo_entre_partidos_minutos')->default(15);
             
             // Configuración general
@@ -63,6 +62,12 @@ return new class extends Migration
             $table->foreignId('torneo_id')->constrained('torneos')->onDelete('cascade');
             $table->foreignId('cancha_id')->constrained('canchas')->onDelete('cascade');
             $table->primary(['torneo_id', 'cancha_id']);
+            
+            // Campos adicionales para relación cancha-torneo
+            $table->boolean('es_principal')->default(false);
+            $table->unsignedSmallInteger('orden_prioridad')->default(1);
+            $table->text('notas')->nullable();
+            
             $table->timestamps();
         });
 

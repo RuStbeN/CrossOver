@@ -101,7 +101,17 @@ class Torneo extends Model
      */
     public function canchas()
     {
-        return $this->belongsToMany(Cancha::class, 'torneo_cancha');
+        return $this->belongsToMany(Cancha::class, 'torneo_cancha')
+                    ->withPivot(['es_principal', 'orden_prioridad'])
+                    ->withTimestamps();
+    }
+
+    // Método conveniente para la cancha principal
+    public function canchaPrincipal()
+    {
+        return $this->belongsToMany(Cancha::class, 'torneo_cancha')
+                    ->wherePivot('es_principal', true)
+                    ->first();
     }
 
     // En tu modelo Torneo.php

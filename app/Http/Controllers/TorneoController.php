@@ -66,6 +66,14 @@ class TorneoController extends Controller
     {
         Log::info('Iniciando creación de torneo', ['datos' => $request->all()]);
         
+        // SOLUCIÓN: Convertir canchas_ids de string a array si es necesario
+        if ($request->has('canchas_ids') && is_string($request->canchas_ids)) {
+            $request->merge([
+                'canchas_ids' => array_filter(explode(',', $request->canchas_ids))
+            ]);
+            Log::info('Canchas convertidas de string a array', ['canchas_ids' => $request->canchas_ids]);
+        }
+        
         $rules = [
             // Información general
             'nombre' => 'required|string|max:150',
@@ -74,7 +82,8 @@ class TorneoController extends Controller
             'liga_id' => 'required|exists:ligas,id',
             'temporada_id' => 'required|exists:temporadas,id',
             'categoria_id' => 'required|exists:categorias,id',
-            'cancha_id' => 'required|exists:canchas,id',
+            'canchas_ids' => 'required|array|min:1',
+            'canchas_ids.*' => 'exists:canchas,id',
             
             // Fechas y tiempos
             'fecha_inicio' => 'required|date',
@@ -93,18 +102,11 @@ class TorneoController extends Controller
             'puntos_por_derrota' => 'required|integer|min:0|max:10'
         ];
 
-        Log::info('Datos recibidos para playoffs', [
-            'usa_playoffs' => $request->usa_playoffs,
-            'equipos_playoffs' => $request->equipos_playoffs,
-            'tipo' => $request->tipo
-        ]);
-
         // Validación condicional para playoffs
         if ($request->tipo === 'por_puntos') {
-            $rules['usa_playoffs'] = 'nullable|boolean'; // Cambia a validación booleana
+            $rules['usa_playoffs'] = 'nullable|boolean';
             $rules['equipos_playoffs'] = 'nullable|integer|in:2,4,6,8';
             
-            // Si usa_playoffs es true, entonces equipos_playoffs es requerido
             if ($request->has('usa_playoffs') && filter_var($request->usa_playoffs, FILTER_VALIDATE_BOOLEAN)) {
                 $rules['equipos_playoffs'] = 'required|integer|in:2,4,6,8';
             }
@@ -113,7 +115,9 @@ class TorneoController extends Controller
         try {
             $validated = $request->validate($rules, [
                 'equipos_playoffs.in' => 'El número de equipos para playoffs debe ser 2, 4, 6 u 8',
-                'fecha_fin.after_or_equal' => 'La fecha final debe ser igual o posterior a la fecha de inicio'
+                'fecha_fin.after_or_equal' => 'La fecha final debe ser igual o posterior a la fecha de inicio',
+                'canchas_ids.required' => 'Debe seleccionar al menos una cancha',
+                'canchas_ids.*.exists' => 'Una o más canchas seleccionadas no existen'
             ]);
             
             Log::info('Validación exitosa', ['validated' => $validated]);
@@ -131,12 +135,29 @@ class TorneoController extends Controller
         DB::beginTransaction();
         
         try {
-            // 1. Crear el torneo
-            $torneo = Torneo::create($data);
+            // 1. Crear el torneo (excluir canchas_ids que no existe en la tabla)
+            $torneoData = collect($data)->except(['canchas_ids'])->toArray();
+            $torneo = Torneo::create($torneoData);
             
             Log::info('Torneo creado en base de datos', ['torneo_id' => $torneo->id]);
             
-            // 2. Determinar qué servicio usar según el tipo de torneo
+            // 2. Asociar las canchas seleccionadas
+            $canchasConPrioridad = [];
+            foreach ($request->canchas_ids as $index => $canchaId) {
+                $canchasConPrioridad[$canchaId] = [
+                    'es_principal' => $index === 0,
+                    'orden_prioridad' => $index + 1
+                ];
+            }
+            
+            $torneo->canchas()->sync($canchasConPrioridad);
+            
+            Log::info('Canchas asociadas al torneo', [
+                'torneo_id' => $torneo->id,
+                'canchas' => $canchasConPrioridad
+            ]);
+            
+            // 3. Configurar según el tipo de torneo
             switch ($torneo->tipo) {
                 case 'por_puntos':
                     $service = app(TorneoPuntosService::class);
@@ -145,18 +166,10 @@ class TorneoController extends Controller
                     break;
                     
                 case 'eliminacion_directa':
-                    // $service = app(TorneoEliminacionDirectaService::class);
-                    // $service->configurarTorneo($torneo);
-                    // break;
                     throw new \Exception("Tipo de torneo eliminación directa no implementado aún");
                     
                 case 'doble_eliminacion':
-                    // $service = app(TorneoDobleEliminacionService::class);
-                    // $service->configurarTorneo($torneo);
-                    // break;
                     throw new \Exception("Tipo de torneo doble eliminación no implementado aún");
-                    
-                // Agrega más casos según necesites
                     
                 default:
                     throw new \Exception("Tipo de torneo no soportado: " . $torneo->tipo);
@@ -187,57 +200,21 @@ class TorneoController extends Controller
         }
     }
 
-    /**
-     * Procesa los datos del torneo antes de guardarlo
-     */
-    private function procesarDatosTorneo(Request $request, array $validated)
-    {
-        // Función helper para convertir valores a booleano
-        $toBool = function($value) {
-            if (is_bool($value)) return $value;
-            if (is_string($value)) {
-                return in_array(strtolower($value), ['true', '1', 'yes', 'on']);
-            }
-            return (bool) $value;
-        };
-
-        // Convertir valores checkbox a booleanos
-        $validated['activo'] = $request->has('activo') && in_array($request->activo, ['1', 'true', 'on']);
-        
-        if ($request->tipo === 'por_puntos') {
-            $validated['usa_playoffs'] = $request->has('usa_playoffs') && 
-                                        in_array($request->usa_playoffs, ['on', '1', 'true']);
-            
-            if (!$validated['usa_playoffs']) {
-                $validated['equipos_playoffs'] = null;
-            }
-        } else {
-            $validated['usa_playoffs'] = false;
-            $validated['equipos_playoffs'] = null;
-        }
-
-        // Agregar campos de auditoría si están disponibles
-        if (auth()->check()) {
-            $validated['created_by'] = auth()->id();
-            $validated['updated_by'] = auth()->id();
-        }
-        
-        // Asegurar que premio_total sea decimal
-        $validated['premio_total'] = $validated['premio_total'] ?? 0.00;
-        
-        Log::info('Datos después de procesar', ['processed_data' => $validated]);
-        
-        return $validated;
-    }
- 
-    
     public function update(Request $request, Torneo $torneo)
     {
         Log::info('Iniciando actualización de torneo', [
             'torneo_id' => $torneo->id,
             'datos' => $request->all()
         ]);
-
+        
+        // SOLUCIÓN: Convertir canchas_ids de string a array si es necesario
+        if ($request->has('canchas_ids') && is_string($request->canchas_ids)) {
+            $request->merge([
+                'canchas_ids' => array_filter(explode(',', $request->canchas_ids))
+            ]);
+            Log::info('Canchas convertidas de string a array en update', ['canchas_ids' => $request->canchas_ids]);
+        }
+        
         $rules = [
             // Información general
             'nombre' => 'required|string|max:150',
@@ -246,7 +223,8 @@ class TorneoController extends Controller
             'liga_id' => 'required|exists:ligas,id',
             'temporada_id' => 'required|exists:temporadas,id',
             'categoria_id' => 'required|exists:categorias,id',
-            'cancha_id' => 'required|exists:canchas,id',
+            'canchas_ids' => 'required|array|min:1',
+            'canchas_ids.*' => 'exists:canchas,id',
             
             // Fechas y tiempos
             'fecha_inicio' => 'required|date',
@@ -274,58 +252,107 @@ class TorneoController extends Controller
         try {
             $validated = $request->validate($rules, [
                 'equipos_playoffs.in' => 'El número de equipos para playoffs debe ser 2, 4, 6 u 8',
-                'fecha_fin.after_or_equal' => 'La fecha final debe ser igual o posterior a la fecha de inicio'
+                'fecha_fin.after_or_equal' => 'La fecha final debe ser igual o posterior a la fecha de inicio',
+                'canchas_ids.required' => 'Debe seleccionar al menos una cancha',
+                'canchas_ids.*.exists' => 'Una o más canchas seleccionadas no existen',
+                'canchas_ids.array' => 'Las canchas deben ser un array válido'
             ]);
             
-            Log::info('Validación exitosa', ['validated' => $validated]);
+            Log::info('Validación exitosa en update', ['validated' => $validated]);
+            
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Error en validación', ['errors' => $e->errors()]);
+            Log::error('Error en validación de update', ['errors' => $e->errors()]);
             throw $e;
         }
 
         // Procesamiento de datos
-        $data = $validated;
+        $data = $this->procesarDatosTorneo($request, $validated);
         
-        // Convertir valores a booleanos
-        $data['activo'] = filter_var($data['activo'], FILTER_VALIDATE_BOOLEAN);
-        
-        if ($request->tipo === 'por_puntos') {
-            $data['usa_playoffs'] = filter_var($data['usa_playoffs'], FILTER_VALIDATE_BOOLEAN);
-            $data['equipos_playoffs'] = $data['usa_playoffs'] ? $data['equipos_playoffs'] : null;
-        } else {
-            $data['usa_playoffs'] = false;
-            $data['equipos_playoffs'] = null;
-        }
+        Log::info('Datos procesados para actualizar torneo', ['data' => $data]);
 
-        // Actualización del torneo
         DB::beginTransaction();
+        
         try {
-            $torneo->update($data);
+            // 1. Actualizar datos básicos del torneo (sin canchas_ids que no existe en la tabla)
+            $torneoData = collect($data)->except(['canchas_ids'])->toArray();
+            $torneo->update($torneoData);
             
-            // Aquí podrías agregar lógica adicional si necesitas actualizar
-            // los partidos o configuración del torneo
+            Log::info('Datos básicos del torneo actualizados', ['torneo_id' => $torneo->id]);
+            
+            // 2. Actualizar canchas asociadas
+            $canchasConPrioridad = [];
+            foreach ($request->canchas_ids as $index => $canchaId) {
+                $canchasConPrioridad[$canchaId] = [
+                    'es_principal' => $index === 0, // La primera es principal
+                    'orden_prioridad' => $index + 1
+                ];
+            }
+            
+            $torneo->canchas()->sync($canchasConPrioridad);
+            
+            Log::info('Canchas actualizadas para torneo', [
+                'torneo_id' => $torneo->id,
+                'canchas' => $canchasConPrioridad
+            ]);
             
             DB::commit();
             
             Log::info('Torneo actualizado exitosamente', [
                 'torneo_id' => $torneo->id,
-                'nombre' => $torneo->nombre
+                'nombre' => $torneo->nombre,
+                'tipo' => $torneo->tipo
             ]);
-
+            
             return redirect()->route('torneos.index')
                         ->with('success', 'Torneo actualizado exitosamente');
                         
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Error al actualizar torneo', [
+                'torneo_id' => $torneo->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'data' => $data ?? 'No procesada'
             ]);
             
             return redirect()->back()
                         ->withInput()
                         ->with('error', 'Error al actualizar el torneo: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Procesa los datos del torneo antes de guardarlo
+     */
+    private function procesarDatosTorneo(Request $request, array $validated)
+    {
+        // Convertir valores checkbox a booleanos
+        $validated['activo'] = filter_var($validated['activo'], FILTER_VALIDATE_BOOLEAN);
+        
+        if ($request->tipo === 'por_puntos') {
+            $validated['usa_playoffs'] = isset($validated['usa_playoffs']) ? 
+                                        filter_var($validated['usa_playoffs'], FILTER_VALIDATE_BOOLEAN) : false;
+            
+            if (!$validated['usa_playoffs']) {
+                $validated['equipos_playoffs'] = null;
+            }
+        } else {
+            $validated['usa_playoffs'] = false;
+            $validated['equipos_playoffs'] = null;
+        }
+
+        // Agregar campos de auditoría si están disponibles
+        if (auth()->check()) {
+            $validated['created_by'] = auth()->id();
+            $validated['updated_by'] = auth()->id();
+        }
+        
+        // Asegurar que premio_total sea decimal
+        $validated['premio_total'] = $validated['premio_total'] ?? 0.00;
+        
+        Log::info('Datos después de procesar', ['processed_data' => $validated]);
+        
+        return $validated;
     }
 
     /**

@@ -113,11 +113,12 @@ class TorneoPuntosService
             $errores[] = 'El torneo debe tener una liga asignada';
         }
         
-        // Validar que tenga cancha
-        if (!$torneo->cancha_id) {
-            $errores[] = 'El torneo debe tener una cancha asignada';
+        // Agregar esto en el método validarConfiguracionTorneo()
+        $canchasAsignadas = DB::table('torneo_cancha')->where('torneo_id', $torneo->id)->count();
+        if ($canchasAsignadas === 0) {
+            $errores[] = 'El torneo debe tener al menos una cancha asignada';
         }
-        
+                
         // Validar duración del cuarto
         if (!$torneo->duracion_cuarto_minutos || $torneo->duracion_cuarto_minutos <= 0) {
             $errores[] = 'La duración del cuarto debe ser mayor a 0 minutos';
@@ -902,10 +903,10 @@ class TorneoPuntosService
             ->where(function($query) use ($equipoLocalId, $equipoVisitanteId) {
                 $query->where(function($q) use ($equipoLocalId, $equipoVisitanteId) {
                     $q->where('equipo_local_id', $equipoLocalId)
-                      ->where('equipo_visitante_id', $equipoVisitanteId);
+                    ->where('equipo_visitante_id', $equipoVisitanteId);
                 })->orWhere(function($q) use ($equipoLocalId, $equipoVisitanteId) {
                     $q->where('equipo_local_id', $equipoVisitanteId)
-                      ->where('equipo_visitante_id', $equipoLocalId);
+                    ->where('equipo_visitante_id', $equipoLocalId);
                 });
             })
             ->first();
@@ -919,6 +920,20 @@ class TorneoPuntosService
             throw new \Exception("Ya existe un juego entre estos equipos en el torneo");
         }
         
+        // Obtener canchas asignadas al torneo ordenadas por prioridad
+        $canchasTorneo = DB::table('torneo_cancha')
+            ->where('torneo_id', $torneo->id)
+            ->orderBy('orden_prioridad')
+            ->get();
+            
+        if ($canchasTorneo->isEmpty()) {
+            throw new \Exception("El torneo no tiene canchas asignadas");
+        }
+        
+        // Seleccionar la primera cancha disponible (implementación básica)
+        // En una implementación real, deberías verificar disponibilidad de la cancha en la fecha/hora
+        $canchaSeleccionada = $canchasTorneo->first();
+        
         try {
             $juego = Juego::create([
                 'liga_id' => $torneo->liga_id,
@@ -926,7 +941,7 @@ class TorneoPuntosService
                 'torneo_id' => $torneo->id,
                 'equipo_local_id' => $equipoLocalId,
                 'equipo_visitante_id' => $equipoVisitanteId,
-                'cancha_id' => $torneo->cancha_id,
+                'cancha_id' => $canchaSeleccionada->cancha_id,
                 'fecha' => $fecha->format('Y-m-d'),
                 'hora' => $hora->format('H:i:s'),
                 'duracion_cuarto' => $torneo->duracion_cuarto_minutos,
@@ -939,7 +954,8 @@ class TorneoPuntosService
             
             Log::debug('✓ Juego creado exitosamente', [
                 'juego_id' => $juego->id,
-                'created_at' => $juego->created_at
+                'created_at' => $juego->created_at,
+                'cancha_id' => $canchaSeleccionada->cancha_id
             ]);
             
             return $juego;
@@ -996,8 +1012,12 @@ class TorneoPuntosService
             if (!$torneo->liga_id) {
                 $diagnostico['torneo']['validaciones'][] = 'ERROR: Falta liga_id';
             }
-            if (!$torneo->cancha_id) {
-                $diagnostico['torneo']['validaciones'][] = 'ERROR: Falta cancha_id';
+            // Agregar validación de canchas asignadas
+            $canchasAsignadas = DB::table('torneo_cancha')->where('torneo_id', $torneo->id)->count();
+            if ($canchasAsignadas === 0) {
+                $diagnostico['torneo']['validaciones'][] = 'ERROR: El torneo no tiene canchas asignadas';
+            } else {
+                $diagnostico['torneo']['canchas_asignadas'] = $canchasAsignadas;
             }
             if (!$torneo->duracion_cuarto_minutos || $torneo->duracion_cuarto_minutos <= 0) {
                 $diagnostico['torneo']['validaciones'][] = 'ERROR: Duración del cuarto inválida';
