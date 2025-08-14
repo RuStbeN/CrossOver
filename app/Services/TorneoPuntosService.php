@@ -515,13 +515,16 @@ class TorneoPuntosService
         $equiposArray = $equipos->toArray();
         $emparejamientos = [];
         
+        // Generar todos los posibles emparejamientos
         for ($i = 0; $i < count($equiposArray); $i++) {
             for ($j = $i + 1; $j < count($equiposArray); $j++) {
                 $emparejamientos[] = [
                     'local' => $equiposArray[$i]['id'],
                     'visitante' => $equiposArray[$j]['id'],
                     'equipo_local_nombre' => $equiposArray[$i]['nombre'],
-                    'equipo_visitante_nombre' => $equiposArray[$j]['nombre']
+                    'equipo_visitante_nombre' => $equiposArray[$j]['nombre'],
+                    'equipo_local' => $equiposArray[$i],
+                    'equipo_visitante' => $equiposArray[$j]
                 ];
             }
         }
@@ -531,12 +534,83 @@ class TorneoPuntosService
             'primer_emparejamiento' => $emparejamientos[0] ?? null
         ]);
         
-        // Mezclar para mejor distribución
-        shuffle($emparejamientos);
-        
-        Log::info('Emparejamientos mezclados para distribución aleatoria');
+        // Balancear emparejamientos
+        $emparejamientos = $this->balancearEmparejamientos($emparejamientos, $equiposArray);
         
         return $emparejamientos;
+    }
+
+    /**
+     * Balancea los emparejamientos usando algoritmo Round Robin modificado
+     */
+    private function balancearEmparejamientos(array $emparejamientos, array $equipos): array
+    {
+        Log::info('Balanceando emparejamientos');
+        
+        // Implementación de algoritmo Round Robin modificado
+        $numEquipos = count($equipos);
+        $equiposIds = array_column($equipos, 'id');
+        $equiposIndex = array_flip($equiposIds);
+        
+        // 1. Ordenar emparejamientos para alternar local/visitante
+        usort($emparejamientos, function($a, $b) use ($equiposIndex) {
+            // Priorizar equipos que han sido menos locales
+            $balanceA = $equiposIndex[$a['local']] - $equiposIndex[$a['visitante']];
+            $balanceB = $equiposIndex[$b['local']] - $equiposIndex[$b['visitante']];
+            return $balanceA - $balanceB;
+        });
+        
+        // 2. Mezclar para evitar secuencias repetidas
+        $grupos = array_chunk($emparejamientos, ceil(count($emparejamientos)/$numEquipos));
+        shuffle($grupos);
+        $emparejamientos = array_merge(...$grupos);
+        
+        // 3. Asegurar que ningún equipo juegue consecutivamente
+        $ultimosPartidos = array_fill_keys($equiposIds, -2);
+        $emparejamientosBalanceados = [];
+        
+        $intentos = 0;
+        $maxIntentos = count($emparejamientos) * 2;
+        
+        while (!empty($emparejamientos) && $intentos < $maxIntentos) {
+            $encontrado = false;
+            
+            foreach ($emparejamientos as $key => $emparejamiento) {
+                $localId = $emparejamiento['local'];
+                $visitanteId = $emparejamiento['visitante'];
+                
+                // Verificar que no jueguen consecutivamente
+                if ($ultimosPartidos[$localId] < $intentos - 1 && 
+                    $ultimosPartidos[$visitanteId] < $intentos - 1) {
+                    
+                    $emparejamientosBalanceados[] = $emparejamiento;
+                    $ultimosPartidos[$localId] = $intentos;
+                    $ultimosPartidos[$visitanteId] = $intentos;
+                    unset($emparejamientos[$key]);
+                    $encontrado = true;
+                    break;
+                }
+            }
+            
+            if (!$encontrado) {
+                // Forzar movimiento si no se encuentra emparejamiento ideal
+                $emparejamientosBalanceados[] = array_shift($emparejamientos);
+            }
+            
+            $intentos++;
+        }
+        
+        // Si quedan emparejamientos, agregarlos al final
+        if (!empty($emparejamientos)) {
+            $emparejamientosBalanceados = array_merge($emparejamientosBalanceados, $emparejamientos);
+        }
+        
+        Log::info('Emparejamientos balanceados', [
+            'total_balanceados' => count($emparejamientosBalanceados),
+            'equipos' => $equiposIds
+        ]);
+        
+        return $emparejamientosBalanceados;
     }
 
     /**
@@ -562,6 +636,10 @@ class TorneoPuntosService
         $juegosCreados = 0;
         $duracionJuegoCompleto = $this->calcularDuracionTotalJuego($torneo) + $torneo->tiempo_entre_partidos_minutos;
         
+        // Estadísticas para balancear
+        $partidosPorEquipo = array_fill_keys($equipos->pluck('id')->toArray(), 0);
+        $ultimoPartidoEquipo = [];
+        
         foreach ($diasDisponibles as $indiceDia => $dia) {
             if (empty($emparejamientos)) {
                 Log::info('Todos los emparejamientos han sido programados');
@@ -577,62 +655,61 @@ class TorneoPuntosService
             $horaActual = $horario['inicio']->copy();
             $juegosEsteDia = 0;
             
-            Log::debug('Horario del día obtenido', [
-                'horario_inicio' => $horario['inicio']->format('H:i'),
-                'horario_fin' => $horario['fin']->format('H:i'),
-                'duracion_disponible' => $horario['inicio']->diffInMinutes($horario['fin']) . ' minutos'
-            ]);
+            // Ordenar emparejamientos para priorizar equipos con menos partidos
+            usort($emparejamientos, function($a, $b) use ($partidosPorEquipo, $ultimoPartidoEquipo) {
+                $prioridadA = $partidosPorEquipo[$a['local']] + $partidosPorEquipo[$a['visitante']];
+                $prioridadB = $partidosPorEquipo[$b['local']] + $partidosPorEquipo[$b['visitante']];
+                
+                // Considerar también cuándo jugaron por última vez
+                if (isset($ultimoPartidoEquipo[$a['local']])) {
+                    $prioridadA -= $ultimoPartidoEquipo[$a['local']];
+                }
+                if (isset($ultimoPartidoEquipo[$a['visitante']])) {
+                    $prioridadA -= $ultimoPartidoEquipo[$a['visitante']];
+                }
+                
+                if (isset($ultimoPartidoEquipo[$b['local']])) {
+                    $prioridadB -= $ultimoPartidoEquipo[$b['local']];
+                }
+                if (isset($ultimoPartidoEquipo[$b['visitante']])) {
+                    $prioridadB -= $ultimoPartidoEquipo[$b['visitante']];
+                }
+                
+                return $prioridadA - $prioridadB;
+            });
             
-            while (!empty($emparejamientos)) {
+            while (!empty($emparejamientos) && $horaActual->copy()->addMinutes($duracionJuegoCompleto)->lte($horario['fin'])) {
                 $emparejamiento = array_shift($emparejamientos);
                 
-                // Calcular si el juego cabe en el horario actual
-                $horaFinJuego = $horaActual->copy()->addMinutes($duracionJuegoCompleto);
+                // Crear el juego
+                $juego = $this->crearJuego(
+                    $torneo,
+                    $emparejamiento['local'],
+                    $emparejamiento['visitante'],
+                    $dia['fecha'],
+                    $horaActual,
+                    'Fase Regular'
+                );
                 
-                Log::debug('Evaluando emparejamiento', [
-                    'local' => $emparejamiento['equipo_local_nombre'],
-                    'visitante' => $emparejamiento['equipo_visitante_nombre'],
-                    'hora_inicio_propuesta' => $horaActual->format('H:i'),
-                    'hora_fin_propuesta' => $horaFinJuego->format('H:i'),
-                    'horario_limite' => $horario['fin']->format('H:i'),
-                    'cabe_en_horario' => $horaFinJuego->lte($horario['fin']) ? 'SÍ' : 'NO'
+                // Actualizar estadísticas
+                $partidosPorEquipo[$emparejamiento['local']]++;
+                $partidosPorEquipo[$emparejamiento['visitante']]++;
+                $ultimoPartidoEquipo[$emparejamiento['local']] = $indiceDia;
+                $ultimoPartidoEquipo[$emparejamiento['visitante']] = $indiceDia;
+                
+                Log::info('✓ Juego programado exitosamente', [
+                    'juego_id' => $juego->id,
+                    'fecha' => $dia['fecha']->format('Y-m-d'),
+                    'hora' => $horaActual->format('H:i'),
+                    'equipo_local' => $emparejamiento['equipo_local_nombre'],
+                    'equipo_visitante' => $emparejamiento['equipo_visitante_nombre'],
+                    'duracion_estimada' => $duracionJuegoCompleto . ' minutos'
                 ]);
                 
-                if ($horaFinJuego->lte($horario['fin'])) {
-                    // Crear el juego
-                    $juego = $this->crearJuego(
-                        $torneo,
-                        $emparejamiento['local'],
-                        $emparejamiento['visitante'],
-                        $dia['fecha'],
-                        $horaActual,
-                        'Fase Regular'
-                    );
-                    
-                    Log::info('✓ Juego programado exitosamente', [
-                        'juego_id' => $juego->id,
-                        'fecha' => $dia['fecha']->format('Y-m-d'),
-                        'hora' => $horaActual->format('H:i'),
-                        'equipo_local' => $emparejamiento['equipo_local_nombre'],
-                        'equipo_visitante' => $emparejamiento['equipo_visitante_nombre'],
-                        'duracion_estimada' => $duracionJuegoCompleto . ' minutos'
-                    ]);
-                    
-                    // Avanzar el horario para el próximo juego
-                    $horaActual = $horaFinJuego->copy();
-                    $juegosEsteDia++;
-                    $juegosCreados++;
-                } else {
-                    // No cabe más en este día, devolver el emparejamiento al inicio del array
-                    array_unshift($emparejamientos, $emparejamiento);
-                    
-                    Log::info('No cabe más juegos en este día, pasando al siguiente', [
-                        'hora_actual' => $horaActual->format('H:i'),
-                        'hora_limite' => $horario['fin']->format('H:i'),
-                        'tiempo_restante' => $horaActual->diffInMinutes($horario['fin']) . ' minutos'
-                    ]);
-                    break;
-                }
+                // Avanzar el horario para el próximo juego
+                $horaActual = $horaActual->copy()->addMinutes($duracionJuegoCompleto);
+                $juegosEsteDia++;
+                $juegosCreados++;
             }
             
             Log::info("--- Día completado ---", [
@@ -649,9 +726,9 @@ class TorneoPuntosService
                 'juegos_sin_programar' => count($emparejamientos),
                 'juegos_programados' => $juegosCreados,
                 'total_esperado' => $totalJuegos,
-                'emparejamientos_faltantes' => array_slice($emparejamientos, 0, 5) // Mostrar solo los primeros 5
+                'emparejamientos_faltantes' => array_slice($emparejamientos, 0, 5)
             ]);
-            throw new \Exception("No se pudieron programar todos los juegos. Faltan " . count($emparejamientos) . " juegos por programar. Considera extender las fechas del torneo o ajustar los horarios.");
+            throw new \Exception("No se pudieron programar todos los juegos. Faltan " . count($emparejamientos) . " juegos por programar.");
         }
         
         Log::info('=== JUEGOS TODOS CONTRA TODOS CREADOS EXITOSAMENTE ===', [
@@ -660,7 +737,8 @@ class TorneoPuntosService
             'total_esperado' => $totalJuegos,
             'dias_utilizados' => count($diasDisponibles),
             'equipos_participantes' => $equipos->count(),
-            'juegos_por_equipo' => $equipos->count() - 1
+            'juegos_por_equipo' => $equipos->count() - 1,
+            'distribucion_partidos' => $partidosPorEquipo
         ]);
         
         return $juegosCreados;
@@ -880,11 +958,11 @@ class TorneoPuntosService
     }
 
     /**
-     * Crea un juego individual con validaciones completas
+     * Crea un juego individual con asignación aleatoria de cancha
      */
     private function crearJuego(Torneo $torneo, $equipoLocalId, $equipoVisitanteId, $fecha, $hora, $fase = 'Fase Regular')
     {
-        Log::debug('Creando juego individual', [
+        Log::debug('Creando juego individual con cancha aleatoria', [
             'torneo_id' => $torneo->id,
             'equipo_local_id' => $equipoLocalId,
             'equipo_visitante_id' => $equipoVisitanteId,
@@ -893,12 +971,12 @@ class TorneoPuntosService
             'fase' => $fase
         ]);
         
-        // Validaciones antes de crear
+        // Validaciones básicas
         if ($equipoLocalId === $equipoVisitanteId) {
             throw new \Exception("Un equipo no puede jugar contra sí mismo");
         }
         
-        // Verificar si ya existe un juego similar
+        // Verificar juego duplicado
         $juegoExistente = Juego::where('torneo_id', $torneo->id)
             ->where(function($query) use ($equipoLocalId, $equipoVisitanteId) {
                 $query->where(function($q) use ($equipoLocalId, $equipoVisitanteId) {
@@ -912,27 +990,67 @@ class TorneoPuntosService
             ->first();
             
         if ($juegoExistente) {
-            Log::warning('Juego duplicado detectado', [
-                'juego_existente_id' => $juegoExistente->id,
-                'equipo_local_id' => $equipoLocalId,
-                'equipo_visitante_id' => $equipoVisitanteId
-            ]);
             throw new \Exception("Ya existe un juego entre estos equipos en el torneo");
         }
         
-        // Obtener canchas asignadas al torneo ordenadas por prioridad
+        // Obtener todas las canchas asignadas al torneo
         $canchasTorneo = DB::table('torneo_cancha')
             ->where('torneo_id', $torneo->id)
-            ->orderBy('orden_prioridad')
             ->get();
             
         if ($canchasTorneo->isEmpty()) {
             throw new \Exception("El torneo no tiene canchas asignadas");
         }
         
-        // Seleccionar la primera cancha disponible (implementación básica)
-        // En una implementación real, deberías verificar disponibilidad de la cancha en la fecha/hora
-        $canchaSeleccionada = $canchasTorneo->first();
+        Log::debug('Canchas disponibles para el torneo', [
+            'total_canchas' => $canchasTorneo->count(),
+            'canchas_ids' => $canchasTorneo->pluck('cancha_id')->toArray()
+        ]);
+        
+        // Calcular duración total del juego
+        $duracionTotal = $this->calcularDuracionTotalJuego($torneo);
+        
+        // Convertir a array y barajar aleatoriamente las canchas
+        $canchasArray = $canchasTorneo->toArray();
+        shuffle($canchasArray);
+        
+        Log::debug('Canchas barajadas aleatoriamente', [
+            'orden_aleatorio' => array_column($canchasArray, 'cancha_id')
+        ]);
+        
+        // Buscar la primera cancha disponible del array aleatorio
+        $canchaSeleccionada = null;
+        foreach ($canchasArray as $cancha) {
+            if ($this->verificarDisponibilidadCancha(
+                $cancha->cancha_id,
+                $fecha,
+                $hora,
+                $duracionTotal
+            )) {
+                $canchaSeleccionada = $cancha;
+                break;
+            }
+        }
+        
+        // Si no hay cancha disponible, seleccionar una aleatoriamente sin verificar disponibilidad
+        // (esto puede ser necesario dependiendo de tu lógica de negocio)
+        if (!$canchaSeleccionada) {
+            Log::warning('No se encontró cancha disponible, seleccionando aleatoriamente', [
+                'fecha' => $fecha->format('Y-m-d'),
+                'hora' => $hora->format('H:i'),
+                'canchas_evaluadas' => array_column($canchasArray, 'cancha_id')
+            ]);
+            
+            // Seleccionar una cancha aleatoria
+            $canchaSeleccionada = $canchasArray[array_rand($canchasArray)];
+        }
+        
+        Log::info('Cancha seleccionada para el juego', [
+            'cancha_id' => $canchaSeleccionada->cancha_id,
+            'es_principal' => $canchaSeleccionada->es_principal ?? false,
+            'orden_prioridad' => $canchaSeleccionada->orden_prioridad ?? null,
+            'metodo_seleccion' => $canchaSeleccionada ? 'disponible' : 'aleatoria'
+        ]);
         
         try {
             $juego = Juego::create([
@@ -945,32 +1063,52 @@ class TorneoPuntosService
                 'fecha' => $fecha->format('Y-m-d'),
                 'hora' => $hora->format('H:i:s'),
                 'duracion_cuarto' => $torneo->duracion_cuarto_minutos,
-                'duracion_descanso' => 5, // Valor estándar
+                'duracion_descanso' => 5,
                 'estado' => 'Programado',
                 'fase' => $fase,
                 'activo' => true,
-                'observaciones' => "Generado automáticamente - Torneo por puntos - " . now()->format('Y-m-d H:i:s')
+                'observaciones' => "Generado automáticamente - Torneo por puntos - Cancha asignada aleatoriamente"
             ]);
             
-            Log::debug('✓ Juego creado exitosamente', [
+            Log::info('✅ Juego creado exitosamente con cancha aleatoria', [
                 'juego_id' => $juego->id,
-                'created_at' => $juego->created_at,
-                'cancha_id' => $canchaSeleccionada->cancha_id
+                'cancha_asignada' => $canchaSeleccionada->cancha_id,
+                'fecha' => $fecha->format('Y-m-d'),
+                'hora' => $hora->format('H:i')
             ]);
             
             return $juego;
             
         } catch (\Exception $e) {
-            Log::error('Error al crear juego', [
+            Log::error('Error al crear juego con cancha aleatoria', [
                 'error' => $e->getMessage(),
-                'torneo_id' => $torneo->id,
-                'equipo_local_id' => $equipoLocalId,
-                'equipo_visitante_id' => $equipoVisitanteId,
-                'fecha' => $fecha->format('Y-m-d'),
-                'hora' => $hora->format('H:i:s')
+                'trace' => $e->getTraceAsString()
             ]);
             throw $e;
         }
+    }
+
+    
+    private function verificarDisponibilidadCancha($canchaId, $fecha, $hora, $duracion): bool
+    {
+        $horaInicio = Carbon::parse($hora);
+        $horaFin = $horaInicio->copy()->addMinutes($duracion);
+        
+        $juegosExistentes = Juego::where('cancha_id', $canchaId)
+            ->where('fecha', $fecha->format('Y-m-d'))
+            ->where(function($query) use ($horaInicio, $horaFin) {
+                $query->where(function($q) use ($horaInicio, $horaFin) {
+                    $q->where('hora', '>=', $horaInicio->format('H:i:s'))
+                    ->where('hora', '<', $horaFin->format('H:i:s'));
+                })->orWhere(function($q) use ($horaInicio) {
+                    $q->where('hora', '<=', $horaInicio->format('H:i:s'))
+                    ->whereRaw('ADDTIME(hora, SEC_TO_TIME(duracion_cuarto*4*60 + duracion_descanso*3*60)) > ?', 
+                    [$horaInicio->format('H:i:s')]);
+                });
+            })
+            ->count();
+        
+        return $juegosExistentes === 0;
     }
 
     /**
