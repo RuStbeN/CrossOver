@@ -22,6 +22,7 @@
             fecha_inicio: '',
             fecha_fin: '',
             duracion_cuarto_minutos: 12,
+            duracion_descanso_minutos: 10,
             tiempo_entre_partidos_minutos: 15,
             premio_total: 0.00,
             estado: 'planificado',
@@ -45,6 +46,7 @@
                 fecha_inicio: '',
                 fecha_fin: '',
                 duracion_cuarto_minutos: 12,
+                duracion_descanso_minutos: 10,
                 tiempo_entre_partidos_minutos: 15,
                 premio_total: 0.00,
                 estado: 'planificado',
@@ -84,6 +86,7 @@
                 fecha_inicio: torneo.fecha_inicio?.split('T')[0] || '',
                 fecha_fin: torneo.fecha_fin?.split('T')[0] || '',
                 duracion_cuarto_minutos: torneo.duracion_cuarto_minutos || 12,
+                duracion_descanso_minutos: torneo.duracion_descanso_minutos || 10,
                 tiempo_entre_partidos_minutos: torneo.tiempo_entre_partidos_minutos || 15,
                 premio_total: torneo.premio_total || 0.00,
                 estado: torneo.estado || 'planificado',
@@ -186,6 +189,7 @@
                     <div x-show="tab === 'asignaciones'" x-transition x-cloak class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                         @include('admin.torneos.partials.formulario._asignaciones')
                     </div>
+                    
 
                     <!-- TAB: CONFIGURACIÓN DE PUNTOS -->
                     <div x-show="tab === 'puntos' && formData.tipo === 'por_puntos'" x-transition x-cloak class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">

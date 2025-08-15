@@ -3,7 +3,7 @@
     <h2 class="text-xl font-bold text-black dark:text-primary-400">Torneos Registrados</h2>
     <button @click="showForm = !showForm; if (!showForm) resetForm()"
             class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md font-medium transition text-sm">
-        <span x-text="showForm ? 'Ocultar Formulario' : '+ Nuevo Torneo'"></span>
+        <span x-text="showForm ? 'Ocultar Formulario' : 'Nuevo Torneo'"></span>
     </button>
 </div>
 

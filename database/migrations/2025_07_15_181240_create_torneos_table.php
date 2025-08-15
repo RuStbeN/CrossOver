@@ -31,12 +31,13 @@ return new class extends Migration
             $table->foreignId('categoria_id')->constrained('categorias');
             
             // Configuración de tiempo
+            $table->unsignedSmallInteger('duracion_cuarto_minutos')->default(12);
+            $table->unsignedSmallInteger('duracion_descanso_minutos')->default(10);
             $table->unsignedSmallInteger('tiempo_entre_partidos_minutos')->default(15);
             
             // Configuración general
             $table->date('fecha_inicio');
             $table->date('fecha_fin')->nullable();
-            $table->unsignedSmallInteger('duracion_cuarto_minutos')->default(12);
             $table->decimal('premio_total', 10, 2)->default(0);
             
             // Configuración específica para torneos por puntos

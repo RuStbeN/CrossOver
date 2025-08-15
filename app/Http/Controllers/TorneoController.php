@@ -88,7 +88,9 @@ class TorneoController extends Controller
             // Fechas y tiempos
             'fecha_inicio' => 'required|date',
             'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
+
             'duracion_cuarto_minutos' => 'required|integer|min:1|max:60',
+            'duracion_descanso_minutos' => 'required|integer|min:1|max:30',
             'tiempo_entre_partidos_minutos' => 'required|integer|min:1|max:60',
             
             // Configuración general

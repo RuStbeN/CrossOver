@@ -47,6 +47,23 @@
            required>
 </div>
 
+<!-- Duración del descanso -->
+<div>
+    <label for="duracion_descanso_minutos" class="block text-sm font-medium mb-1 dark:text-gray-300 text-dark-800">
+        Duración del descanso (min) <span class="text-orange-500 text-lg font-semibold">*</span>
+    </label>
+    <input 
+        id="duracion_descanso_minutos" 
+        name="duracion_descanso_minutos" 
+        type="number" 
+        min="1" 
+        max="30"
+        x-model="formData.duracion_descanso_minutos"
+        class="w-full bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 rounded-md px-3 py-2 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+        required
+    >
+</div>
+
 <!-- Duración de Tiempo entre partidos -->
 <div>
     <label for="tiempo_entre_partidos_minutos" class="block text-sm font-medium mb-1 dark:text-gray-300 text-dark-800">Duración de Tiempos entre partidos (minutos) <span class="text-orange-500 text-lg font-semibold">*</span></label>

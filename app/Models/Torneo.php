@@ -26,6 +26,7 @@ class Torneo extends Model
         'fecha_inicio',
         'fecha_fin',
         'duracion_cuarto_minutos',
+        'duracion_descanso_minutos',  
         'tiempo_entre_partidos_minutos',
         'premio_total',
         'puntos_por_victoria',

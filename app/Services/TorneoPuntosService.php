@@ -752,7 +752,9 @@ class TorneoPuntosService
         // Configuración estándar de básquetbol
         $cuartos = 4;
         $descansos = 3; // Entre cuartos
-        $duracionDescanso = 5; // minutos por descanso
+        
+        // Usa los valores desde la base de datos
+        $duracionDescanso = $torneo->duracion_descanso_minutos;
         
         $duracionTotal = ($cuartos * $torneo->duracion_cuarto_minutos) + ($descansos * $duracionDescanso);
         
@@ -1051,7 +1053,7 @@ class TorneoPuntosService
             'orden_prioridad' => $canchaSeleccionada->orden_prioridad ?? null,
             'metodo_seleccion' => $canchaSeleccionada ? 'disponible' : 'aleatoria'
         ]);
-        
+            
         try {
             $juego = Juego::create([
                 'liga_id' => $torneo->liga_id,
@@ -1063,7 +1065,7 @@ class TorneoPuntosService
                 'fecha' => $fecha->format('Y-m-d'),
                 'hora' => $hora->format('H:i:s'),
                 'duracion_cuarto' => $torneo->duracion_cuarto_minutos,
-                'duracion_descanso' => 5,
+                'duracion_descanso' => $torneo->duracion_descanso_minutos,
                 'estado' => 'Programado',
                 'fase' => $fase,
                 'activo' => true,
