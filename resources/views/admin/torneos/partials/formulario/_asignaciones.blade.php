@@ -5,6 +5,7 @@
 <!-- Multi Selects de canchas (usando el componente creado) -->
 @include('components.selects.multi_select_canchas')
 
+
 <!-- Selects de Liga y Categoría (usando el componente creado) -->
 @include('components.selects.select_ligas_categorias')
 

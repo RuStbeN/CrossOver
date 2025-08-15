@@ -1,7 +1,7 @@
 <div x-data="{
     isOpen: false,
     searchTerm: '',
-    selectedCanchas: [],
+    selectedCanchas: {{ json_encode($selectedCanchasWithPivot ?? []) }}, // Cambio importante aquí
     canchas: {{ json_encode($canchas->map(function($cancha) {
         return [
             'id' => $cancha->id,
@@ -12,6 +12,19 @@
             'tarifa_por_hora' => $cancha->tarifa_por_hora
         ];
     })) }},
+    init() {
+        // Si hay canchas pre-seleccionadas, las marcamos como seleccionadas
+        if (this.selectedCanchas.length > 0) {
+            // Asegurarnos de que tenemos objetos completos con datos pivot
+            this.selectedCanchas = this.selectedCanchas.map(selected => {
+                const found = this.canchas.find(c => c.id == selected.id);
+                return {
+                    ...(found || {id: selected.id, nombre: 'Cancha no encontrada'}),
+                    pivot: selected.pivot || {es_principal: 0, orden_prioridad: 0}
+                };
+            });
+        }
+    },
     get filteredCanchas() {
         if (!this.searchTerm.trim()) {
             return this.canchas.filter(cancha => 
@@ -28,13 +41,52 @@
     },
     addCancha(cancha) {
         if (!this.selectedCanchas.some(sc => sc.id === cancha.id)) {
-            this.selectedCanchas.push({...cancha});
+            this.selectedCanchas.push({
+                ...cancha,
+                pivot: {
+                    es_principal: 0,
+                    orden_prioridad: this.selectedCanchas.length + 1
+                }
+            });
             this.searchTerm = '';
             this.$nextTick(() => this.$refs.search.focus());
         }
     },
     removeCancha(index) {
         this.selectedCanchas.splice(index, 1);
+        // Reordenar las prioridades
+        this.selectedCanchas.forEach((cancha, idx) => {
+            cancha.pivot.orden_prioridad = idx + 1;
+        });
+    },
+    togglePrincipal(index) {
+        this.selectedCanchas.forEach((cancha, i) => {
+            cancha.pivot.es_principal = (i === index) ? 1 : 0;
+        });
+    },
+    moveUp(index) {
+        if (index > 0) {
+            const temp = this.selectedCanchas[index];
+            this.selectedCanchas[index] = this.selectedCanchas[index - 1];
+            this.selectedCanchas[index - 1] = temp;
+            
+            // Actualizar prioridades
+            this.selectedCanchas.forEach((cancha, idx) => {
+                cancha.pivot.orden_prioridad = idx + 1;
+            });
+        }
+    },
+    moveDown(index) {
+        if (index < this.selectedCanchas.length - 1) {
+            const temp = this.selectedCanchas[index];
+            this.selectedCanchas[index] = this.selectedCanchas[index + 1];
+            this.selectedCanchas[index + 1] = temp;
+            
+            // Actualizar prioridades
+            this.selectedCanchas.forEach((cancha, idx) => {
+                cancha.pivot.orden_prioridad = idx + 1;
+            });
+        }
     },
     toggleDropdown() {
         this.isOpen = !this.isOpen;
@@ -58,6 +110,7 @@ class="relative">
         <template x-for="(cancha, index) in selectedCanchas" :key="cancha.id">
             <div class="flex items-center bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-200 rounded-full px-3 py-1 text-sm">
                 <span x-text="cancha.nombre" class="dark:text-white"></span>
+                <span x-show="cancha.pivot.es_principal == 1" class="ml-1 text-yellow-500">★</span>
                 <button @click.stop="removeCancha(index)" type="button" class="ml-1 text-primary-500 hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-100">
                     &times;
                 </button>
@@ -73,8 +126,12 @@ class="relative">
                placeholder="Buscar canchas...">
     </div>
     
-    <!-- Input hidden para el formulario -->
-    <input type="hidden" name="canchas_ids" :value="selectedCanchas.map(c => c.id).join(',')">
+    <!-- Inputs hidden para el formulario -->
+    <template x-for="(cancha, index) in selectedCanchas" :key="'hidden-'+cancha.id">
+        <input type="hidden" :name="'canchas['+index+'][id]'" :value="cancha.id">
+        <input type="hidden" :name="'canchas['+index+'][es_principal]'" :value="cancha.pivot.es_principal">
+        <input type="hidden" :name="'canchas['+index+'][orden_prioridad]'" :value="cancha.pivot.orden_prioridad">
+    </template>
     
     <!-- Dropdown de opciones -->
     <div x-show="isOpen" 
@@ -105,6 +162,44 @@ class="relative">
         <!-- Mensaje sin resultados -->
         <div x-show="filteredCanchas.length === 0" class="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">
             No se encontraron canchas
+        </div>
+    </div>
+    
+    <!-- Panel de gestión de canchas seleccionadas -->
+    <div x-show="selectedCanchas.length > 0" class="mt-4 bg-gray-50 dark:bg-dark-800 rounded-lg p-4">
+        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Gestión de Canchas Seleccionadas</h4>
+        
+        <div class="space-y-3">
+            <template x-for="(cancha, index) in selectedCanchas" :key="'manage-'+cancha.id">
+                <div class="flex items-center justify-between bg-white dark:bg-dark-700 p-3 rounded-md shadow-sm">
+                    <div class="flex items-center">
+                        <span class="text-gray-900 dark:text-white font-medium" x-text="cancha.nombre"></span>
+                        <span x-show="cancha.pivot.es_principal == 1" class="ml-2 text-yellow-500">(Principal)</span>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <button @click="togglePrincipal(index)" type="button" class="p-1 text-gray-500 hover:text-yellow-500" :class="{'text-yellow-500': cancha.pivot.es_principal == 1}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                            </svg>
+                        </button>
+                        
+                        <button @click="moveUp(index)" type="button" class="p-1 text-gray-500 hover:text-primary-500" :disabled="index === 0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                            </svg>
+                        </button>
+                        
+                        <button @click="moveDown(index)" type="button" class="p-1 text-gray-500 hover:text-primary-500" :disabled="index === selectedCanchas.length - 1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        
+                        <span class="text-xs text-gray-500 dark:text-gray-400" x-text="'Prioridad: ' + cancha.pivot.orden_prioridad"></span>
+                    </div>
+                </div>
+            </template>
         </div>
     </div>
 </div>

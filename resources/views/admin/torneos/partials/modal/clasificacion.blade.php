@@ -6,13 +6,12 @@
 </div>
 
 <div class="bg-white dark:bg-dark-800 rounded-lg shadow overflow-hidden">
-    
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-700">
             <thead class="bg-gray-50 dark:bg-dark-700">
                 <tr>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pos.</th>
-                    <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16"></th>
+                    <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">Podio</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Equipo</th>
                     <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">PJ</th>
                     <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">PG</th>
@@ -25,65 +24,77 @@
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
-                <template x-for="clasificacion in selectedTorneo.clasificacion" :key="clasificacion.id">
+                <template x-for="(equipo, index) in selectedTorneo.clasificacion" :key="equipo.id">
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white" x-text="clasificacion.posicion"></td>
-                        
-                        <!-- Columna dedicada para las coronas -->
+                        <!-- Posición - siempre visible -->
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white" x-text="index + 1"></td>
+                                            
+                        <!-- Coronas -->
                         <td class="px-3 py-4 whitespace-nowrap text-center">
-                            <!-- Corona de Oro - 1er lugar -->
-                            <template x-if="clasificacion.posicion === 1">
+                            <!-- Oro - 1er lugar -->
+                            <template x-if="index === 0">
                                 <svg class="w-7 h-7 mx-auto text-yellow-500 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M5 16L3 5.5l4.5 4.5L12 4l4.5 6L21 5.5L19 16H5zm2.38-2h9.24l.76-4.2-2.32 2.32L12 9.18l-2.06 2.94-2.32-2.32L9.38 14z"/>
                                     <circle cx="12" cy="17.5" r="1.5"/>
                                 </svg>
                             </template>
                             
-                            <!-- Corona de Plata - 2do lugar -->
-                            <template x-if="clasificacion.posicion === 2">
-                                <svg class="w-7 h-7 mx-auto text-gray-400 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+                            <!-- Plata - 2do lugar -->
+                            <template x-if="index === 1">
+                                <svg class="w-7 h-7 mx-auto text-gray-300 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M5 16L3 5.5l4.5 4.5L12 4l4.5 6L21 5.5L19 16H5zm2.38-2h9.24l.76-4.2-2.32 2.32L12 9.18l-2.06 2.94-2.32-2.32L9.38 14z"/>
                                     <circle cx="12" cy="17.5" r="1.5"/>
                                 </svg>
                             </template>
                             
-                            <!-- Corona de Bronce - 3er lugar -->
-                            <template x-if="clasificacion.posicion === 3">
-                                <svg class="w-7 h-7 mx-auto text-amber-700 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+                            <!-- Bronce - 3er lugar -->
+                            <template x-if="index === 2">
+                                <svg class="w-7 h-7 mx-auto text-amber-600 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M5 16L3 5.5l4.5 4.5L12 4l4.5 6L21 5.5L19 16H5zm2.38-2h9.24l.76-4.2-2.32 2.32L12 9.18l-2.06 2.94-2.32-2.32L9.38 14z"/>
                                     <circle cx="12" cy="17.5" r="1.5"/>
                                 </svg>
                             </template>
+                            
+                            <!-- Corona verde solo si hay playoffs y está dentro de los equipos calificados -->
+                            <template x-if="selectedTorneo.usa_playoffs && index >= 3 && index < selectedTorneo.equipos_playoffs">
+                                <svg class="w-6 h-6 mx-auto text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M5 16L3 5.5l4.5 4.5L12 4l4.5 6L21 5.5L19 16H5zm2.38-2h9.24l.76-4.2-2.32 2.32L12 9.18l-2.06 2.94-2.32-2.32L9.38 14z"/>
+                                </svg>
+                            </template>
                         </td>
                         
+                        <!-- Nombre del equipo -->
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                             <div class="flex items-center">
                                 <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900 dark:text-white" x-text="clasificacion.equipo.nombre"></div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white" x-text="equipo.equipo.nombre"></div>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400" x-text="clasificacion.partidos_jugados"></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400" x-text="clasificacion.partidos_ganados"></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400" x-text="clasificacion.partidos_empatados"></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400" x-text="clasificacion.partidos_perdidos"></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400" x-text="clasificacion.puntos_favor"></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400" x-text="clasificacion.puntos_contra"></td>
+                        
+                        <!-- Estadísticas -->
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400" x-text="equipo.partidos_jugados"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400" x-text="equipo.partidos_ganados"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400" x-text="equipo.partidos_empatados"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400" x-text="equipo.partidos_perdidos"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400" x-text="equipo.puntos_favor"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400" x-text="equipo.puntos_contra"></td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-medium" 
                             :class="{
-                                'text-green-600 dark:text-green-400': clasificacion.diferencia_puntos > 0,
-                                'text-red-600 dark:text-red-400': clasificacion.diferencia_puntos < 0,
-                                'text-gray-500 dark:text-gray-400': clasificacion.diferencia_puntos === 0
+                                'text-green-600 dark:text-green-400': equipo.diferencia_puntos > 0,
+                                'text-red-600 dark:text-red-400': equipo.diferencia_puntos < 0,
+                                'text-gray-500 dark:text-gray-400': equipo.diferencia_puntos === 0
                             }"
-                            x-text="clasificacion.diferencia_puntos > 0 ? `+${clasificacion.diferencia_puntos}` : clasificacion.diferencia_puntos">
+                            x-text="equipo.diferencia_puntos > 0 ? `+${equipo.diferencia_puntos}` : equipo.diferencia_puntos">
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-gray-900 dark:text-white" x-text="clasificacion.puntos_totales"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-gray-900 dark:text-white" x-text="equipo.puntos_totales"></td>
                     </tr>
                 </template>
             </tbody>
         </table>
     </div>
 </div>
+
 
 <!-- Card explicativa de las estadísticas -->
 <div class="mt-6 bg-white dark:bg-dark-800 rounded-lg shadow overflow-hidden">

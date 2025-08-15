@@ -27,15 +27,21 @@ class TorneoController extends Controller
         ]);
 
         try {
-            $query = Torneo::with(['liga', 'temporada', 'categoria', 'cancha', 'equipos', 'juegos', 'clasificacion.equipo'])
-                    ->orderBy('fecha_inicio', 'desc');
+            $query = Torneo::with([
+                    'liga', 
+                    'temporada', 
+                    'categoria', 
+                    'canchas',
+                    'equipos', 
+                    'juegos', 
+                    'clasificacion.equipo'
+                ])
+                ->orderBy('fecha_inicio', 'desc');
 
-            // Aplicar filtros si es necesario
             if ($request->has('search')) {
                 $query->where('nombre', 'like', '%' . $request->search . '%');
             }
 
-            // Paginación con valor directo 12
             $torneos = $query->paginate(12);
             
             $ligas = Liga::orderBy('nombre')->get();
