@@ -235,6 +235,140 @@
                             placeholder="correo@ejemplo.com"
                         >
                     </div>
+                    <!-- Nueva Contraseña (solo para administrador) -->
+                    <div class="col-span-1">
+                        <label for="nueva_password" class="block text-sm font-medium mb-1 dark:text-gray-300 text-dark-800">
+                            Nueva Contraseña <span class="text-gray-500 text-xs">(dejar vacío para mantener actual)</span>
+                        </label>
+                        <input
+                            type="password"
+                            id="nueva_password"
+                            name="nueva_password"
+                            autocomplete="new-password"
+                            oninput="checkAdminPasswordStrength()"
+                            class="w-full h-10 bg-white dark:bg-dark-700 px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-md text-black dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="Mínimo 8 caracteres"
+                        >
+                        
+                        <!-- Medidor de seguridad para admin -->
+                        <div id="admin-password-strength" class="mt-2 hidden">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs text-gray-600 dark:text-gray-400">Seguridad de la contraseña:</span>
+                                <span id="admin-strength-text" class="text-xs font-medium"></span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-dark-600 rounded-full h-1.5">
+                                <div id="admin-strength-bar" class="h-1.5 rounded-full transition-all duration-300"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Confirmar Nueva Contraseña -->
+                    <div class="col-span-1">
+                        <label for="nueva_password_confirmation" class="block text-sm font-medium mb-1 dark:text-gray-300 text-dark-800">
+                            Confirmar Nueva Contraseña
+                        </label>
+                        <input
+                            type="password"
+                            id="nueva_password_confirmation"
+                            name="nueva_password_confirmation"
+                            autocomplete="new-password"
+                            class="w-full h-10 bg-white dark:bg-dark-700 px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-md text-black dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder="Repetir la nueva contraseña"
+                        >
+                    </div>
+
+                    <!-- Información de cambio de contraseña -->
+                    <div class="col-span-1 md:col-span-2">
+                        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3">
+                            <div class="flex items-start">
+                                <svg class="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.96-.833-2.73 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                <div class="text-xs text-amber-700 dark:text-amber-300">
+                                    <p class="font-medium">Cambio de contraseña del árbitro:</p>
+                                    <ul class="mt-1 space-y-0.5">
+                                        <li>• Si deja ambos campos vacíos, la contraseña actual se mantendrá</li>
+                                        <li>• Si ingresa una nueva contraseña, debe confirmarla en ambos campos</li>
+                                        <li>• El árbitro deberá usar la nueva contraseña en su siguiente acceso</li>
+                                        <li>• Se marcará que debe cambiar la contraseña en su primer ingreso</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                    function checkAdminPasswordStrength() {
+                        const password = document.getElementById('nueva_password').value;
+                        const strengthIndicator = document.getElementById('admin-password-strength');
+                        const strengthBar = document.getElementById('admin-strength-bar');
+                        const strengthText = document.getElementById('admin-strength-text');
+
+                        // Mostrar indicador si hay texto
+                        if (password.length > 0) {
+                            strengthIndicator.classList.remove('hidden');
+                        } else {
+                            strengthIndicator.classList.add('hidden');
+                            return;
+                        }
+
+                        // Criterios básicos
+                        const hasMinLength = password.length >= 8;
+                        const hasUppercase = /[A-Z]/.test(password);
+                        const hasLowercase = /[a-z]/.test(password);
+                        const hasNumber = /[0-9]/.test(password);
+                        const hasSpecial = /[!@#$%^&*(),.?":{}|<>@$!%*?&]/.test(password);
+
+                        // Calcular puntuación
+                        let score = 0;
+                        if (hasMinLength) score++;
+                        if (hasUppercase) score++;
+                        if (hasLowercase) score++;
+                        if (hasNumber) score++;
+                        if (hasSpecial) score++;
+
+                        let strength = 0;
+                        let strengthLabel = '';
+                        let strengthClass = '';
+
+                        if (password.length < 8) {
+                            strength = 20;
+                            strengthLabel = 'Muy corta (mín. 8)';
+                            strengthClass = 'bg-red-500';
+                        } else if (score <= 2) {
+                            strength = 40;
+                            strengthLabel = 'Débil';
+                            strengthClass = 'bg-red-500';
+                        } else if (score === 3) {
+                            strength = 60;
+                            strengthLabel = 'Regular';
+                            strengthClass = 'bg-yellow-500';
+                        } else if (score === 4) {
+                            strength = 80;
+                            strengthLabel = 'Buena';
+                            strengthClass = 'bg-blue-500';
+                        } else if (score === 5) {
+                            strength = 100;
+                            strengthLabel = 'Muy fuerte';
+                            strengthClass = 'bg-green-500';
+                        }
+
+                        // Actualizar barra de progreso
+                        strengthBar.style.width = strength + '%';
+                        strengthBar.className = `h-1.5 rounded-full transition-all duration-300 ${strengthClass}`;
+                        strengthText.textContent = strengthLabel;
+                        
+                        // Color del texto
+                        const textColorClass = {
+                            'bg-red-500': 'text-red-600 dark:text-red-400',
+                            'bg-yellow-500': 'text-yellow-600 dark:text-yellow-400', 
+                            'bg-blue-500': 'text-blue-600 dark:text-blue-400',
+                            'bg-green-500': 'text-green-600 dark:text-green-400'
+                        };
+                        
+                        strengthText.className = `text-xs font-medium ${textColorClass[strengthClass] || 'text-gray-600 dark:text-gray-400'}`;
+                    }
+                    </script>
 
                     <!-- Foto del Árbitro -->
                     <div class="col-span-1">

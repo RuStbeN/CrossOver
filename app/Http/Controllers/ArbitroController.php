@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Rol;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
@@ -93,7 +94,8 @@ class ArbitroController extends Controller
         Log::info('Intentando actualizar árbitro', ['id' => $arbitro->id]);
         
         try {
-            $validator = Validator::make($request->all(), [
+            // Reglas de validación básicas
+            $rules = [
                 'nombre' => 'required|string|max:150',
                 'edad' => 'nullable|integer|min:18|max:100',
                 'direccion' => 'nullable|string|max:255',
@@ -101,6 +103,18 @@ class ArbitroController extends Controller
                 'correo' => 'nullable|email|max:100|unique:arbitros,correo,' . $arbitro->id . '|unique:users,email,' . $arbitro->user_id,
                 'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'activo' => 'required|boolean',
+            ];
+
+            // Agregar validaciones de contraseña si se proporciona
+            if ($request->filled('nueva_password')) {
+                $rules['nueva_password'] = 'required|string|min:8|confirmed';
+                $rules['nueva_password_confirmation'] = 'required';
+            }
+
+            $validator = Validator::make($request->all(), $rules, [
+                'nueva_password.min' => 'La nueva contraseña debe tener al menos 8 caracteres.',
+                'nueva_password.confirmed' => 'La confirmación de la nueva contraseña no coincide.',
+                'nueva_password_confirmation.required' => 'Debe confirmar la nueva contraseña.',
             ]);
 
             if ($validator->fails()) {
@@ -114,10 +128,26 @@ class ArbitroController extends Controller
 
             // Actualizar usuario asociado
             if ($arbitro->user) {
-                $arbitro->user->update([
+                $userUpdateData = [
                     'name' => $validatedData['nombre'],
                     'email' => $validatedData['correo'],
-                ]);
+                ];
+
+                // Agregar cambio de contraseña si se proporciona
+                if ($request->filled('nueva_password')) {
+                    $userUpdateData['password'] = Hash::make($validatedData['nueva_password']);
+                    $userUpdateData['password_changed_at'] = now();
+                    $userUpdateData['must_change_password'] = true; // Forzar cambio en próximo login
+                    
+                    Log::info('Contraseña de árbitro cambiada por administrador', [
+                        'arbitro_id' => $arbitro->id,
+                        'arbitro_nombre' => $validatedData['nombre'],
+                        'admin_user_id' => Auth::id(),
+                        'changed_at' => now()
+                    ]);
+                }
+
+                $arbitro->user->update($userUpdateData);
             }
 
             // Manejo de la foto
@@ -131,14 +161,28 @@ class ArbitroController extends Controller
                 Log::info('Nueva foto guardada', ['ruta' => $path]);
             }
 
+            // Remover campos de contraseña antes de actualizar el árbitro
+            unset($validatedData['nueva_password'], $validatedData['nueva_password_confirmation']);
+
             $arbitro->update($validatedData);
             Log::info('Árbitro actualizado exitosamente', ['id' => $arbitro->id]);
 
+            // Mensaje de éxito personalizado
+            $mensaje = 'Árbitro actualizado exitosamente.';
+            if ($request->filled('nueva_password')) {
+                $mensaje .= ' La contraseña ha sido cambiada y el árbitro deberá cambiarla en su próximo acceso.';
+            }
+
             return redirect()->route('arbitros.index')
-                ->with('success', 'Árbitro actualizado exitosamente.');
+                ->with('success', $mensaje);
                             
         } catch (\Exception $e) {
-            Log::error('Error al actualizar árbitro: ' . $e->getMessage());
+            Log::error('Error al actualizar árbitro: ' . $e->getMessage(), [
+                'arbitro_id' => $arbitro->id,
+                'user_id' => Auth::id(),
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+            
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Error al actualizar el árbitro. Intenta nuevamente.');
