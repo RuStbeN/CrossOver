@@ -7,6 +7,11 @@
         <span x-text="showForm ? 'Ocultar Formulario' : 'Registrar Nueva Temporada'"></span>
     </button>
 </div>
+<!-- Incluir el componente de filtros -->
+<x-filtros.temporadas 
+    :total-temporadas="$totalTemporadas"
+    :temporadas-filtered="$temporadas->count()"
+/>
 
 <div class="p-6">
     @if($temporadas->isEmpty())

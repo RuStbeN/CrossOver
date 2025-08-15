@@ -7,20 +7,107 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;  
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class TemporadaController extends Controller
 {
-    public function index()
+
+    public function index(Request $request)
     {
-        Log::info('Accediendo a la lista de temporadas');
-        
-        $temporadas = Temporada::with(['diasHabiles' => function($query) {
-            $query->orderBy('dia_semana');
-        }])
-        ->orderBy('fecha_inicio', 'desc')
-        ->paginate(12);
-        
-        return view('admin.temporadas.index', compact('temporadas'));
+        \Log::info('Acceso a listado de temporadas', [
+            'user_id' => Auth::id(),
+            'ip' => request()->ip(),
+            'user_agent' => request()->userAgent()
+        ]);
+
+        try {
+            // Capturar parámetros de filtro
+            $search = $request->get('search');
+            $estado = $request->get('estado');
+            $periodo = $request->get('periodo'); // vigente, futura, pasada
+            $ordenar = $request->get('ordenar', 'fecha_inicio');
+            $direccion = $request->get('direccion', 'desc');
+            
+            // Construir query base
+            $query = Temporada::with(['diasHabiles' => function($query) {
+                $query->orderBy('dia_semana');
+            }]);
+            
+            // Aplicar filtros
+            if ($search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('nombre', 'like', '%' . $search . '%')
+                    ->orWhere('descripcion', 'like', '%' . $search . '%');
+                });
+            }
+            
+            if ($estado !== null && $estado !== '') {
+                $query->where('activo', (bool) $estado);
+            }
+            
+            // Filtro por período
+            if ($periodo) {
+                $fechaActual = today();
+                switch ($periodo) {
+                    case 'vigente':
+                        $query->where('fecha_inicio', '<=', $fechaActual)
+                            ->where('fecha_fin', '>=', $fechaActual);
+                        break;
+                    case 'futura':
+                        $query->where('fecha_inicio', '>', $fechaActual);
+                        break;
+                    case 'pasada':
+                        $query->where('fecha_fin', '<', $fechaActual);
+                        break;
+                }
+            }
+            
+            // Aplicar ordenamiento
+            $ordenamientosValidos = [
+                'nombre', 'fecha_inicio', 'fecha_fin', 
+                'created_at', 'updated_at'
+            ];
+            
+            if (in_array($ordenar, $ordenamientosValidos)) {
+                $query->orderBy($ordenar, $direccion === 'asc' ? 'asc' : 'desc');
+            } else {
+                $query->orderBy('fecha_inicio', 'desc');
+            }
+            
+            // Ejecutar query con paginación
+            $temporadas = $query->paginate(12);
+            
+            // Mantener parámetros de filtro en la paginación
+            $temporadas->appends($request->query());
+            
+            // Total de temporadas (sin filtros)
+            $totalTemporadas = Temporada::count();
+            
+            \Log::debug('Listado de temporadas cargado correctamente', [
+                'total_temporadas' => $temporadas->total(),
+                'current_page' => $temporadas->currentPage(),
+                'per_page' => $temporadas->perPage(),
+                'filtros_aplicados' => [
+                    'search' => $search,
+                    'estado' => $estado,
+                    'periodo' => $periodo,
+                    'ordenar' => $ordenar,
+                    'direccion' => $direccion
+                ]
+            ]);
+            
+            return view('admin.temporadas.index', compact('temporadas', 'totalTemporadas'));
+            
+        } catch (\Exception $e) {
+            \Log::error('Error al cargar listado de temporadas', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Ocurrió un error al cargar el listado de temporadas. Por favor intente nuevamente.');
+        }
     }
 
 
