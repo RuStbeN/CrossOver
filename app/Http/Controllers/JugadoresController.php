@@ -16,48 +16,136 @@ use App\Models\Categoria;
 class JugadoresController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
         try {
-            Log::info('Consultando listado de jugadores', [
-                'usuario' => auth()->id(),
-                'ip' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-                'timestamp' => now()
+            // Validación de parámetros
+            $validated = $request->validate([
+                'search' => 'nullable|string|max:255',
+                'estado' => 'nullable|in:0,1',
+                'sexo' => 'nullable|in:M,F',
+                'liga_id' => 'nullable|exists:ligas,id',
+                'categoria_id' => 'nullable|exists:categorias,id',
+                'equipo_id' => 'nullable|exists:equipos,id',
+                'edad_min' => 'nullable|integer|min:5|max:80',
+                'edad_max' => 'nullable|integer|min:5|max:80',
+                'ordenar' => 'nullable|in:created_at,updated_at,nombre,edad,email,fecha_nacimiento',
+                'direccion' => 'nullable|in:asc,desc'
             ]);
 
-            // Obtener jugadores con sus relaciones actuales
-            $jugadores = Jugador::with([
-                    'equipos_actual.equipo',
-                    'liga', 
-                    'categoria'
-                ])
-                ->latest()
-                ->paginate(12);  // Valor directo en lugar de constante
-                
+            // Validación adicional para edades
+            if ($request->filled('edad_min') && $request->filled('edad_max') && 
+                $request->edad_max < $request->edad_min) {
+                return redirect()
+                    ->route('jugadores.index')
+                    ->with('error', 'La edad máxima debe ser mayor o igual a la edad mínima')
+                    ->withInput();
+            }
+
             // Obtener datos para los selects
             $equipos = Equipo::orderBy('nombre')->get();
             $ligas = Liga::where('activo', true)->orderBy('nombre')->get();
             $categorias = Categoria::orderBy('nombre')->get();
             
-            Log::info('Listado de jugadores obtenido exitosamente', [
-                'total_jugadores' => $jugadores->total(),
-                'current_page' => $jugadores->currentPage(),
-                'per_page' => $jugadores->perPage(),
-                'total_equipos' => $equipos->count(),
-                'total_ligas' => $ligas->count(),
-                'total_categorias' => $categorias->count(),
-                'usuario' => auth()->id()
-            ]);
+            // Query base con relaciones
+            $query = Jugador::with(['equipos_actual.equipo', 'liga', 'categoria']);
 
-            return view('admin.jugadores.index', compact('jugadores', 'equipos', 'ligas', 'categorias'));
-        } catch (\Exception $e) {
-            Log::error('Error al obtener listado de jugadores', [
-                'error' => $e->getMessage(),
-                'usuario' => auth()->id(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            // Aplicar filtros
             
+            // Filtro de búsqueda
+            if ($request->filled('search')) {
+                $searchTerm = $request->search;
+                $query->where(function($q) use ($searchTerm) {
+                    $q->where('nombre', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('rfc', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('email', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('telefono', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('contacto_emergencia_telefono', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('contacto_emergencia_nombre', 'like', '%' . $searchTerm . '%');
+                });
+            }
+
+            // Filtro por estado
+            if ($request->filled('estado')) {
+                $query->where('activo', $request->estado);
+            }
+
+            // Filtro por sexo con mapeo
+            if ($request->filled('sexo')) {
+                $sexoMap = [
+                    'M' => 'Masculino',
+                    'F' => 'Femenino'
+                ];
+                
+                $sexoValue = $sexoMap[$request->sexo] ?? $request->sexo;
+                Log::info('Filtro sexo aplicado', ['sexo_enviado' => $request->sexo, 'sexo_mapeado' => $sexoValue]);
+                $query->where('sexo', $sexoValue);
+            }
+
+            // Filtro por liga
+            if ($request->filled('liga_id')) {
+                $query->where('liga_id', $request->liga_id);
+            }
+
+            // Filtro por categoría
+            if ($request->filled('categoria_id')) {
+                $query->where('categoria_id', $request->categoria_id);
+            }
+
+            // Filtro por equipo actual - usar la relación correcta
+            if ($request->filled('equipo_id')) {
+                $query->whereHas('equipos_actual', function($q) use ($request) {
+                    $q->where('equipo_id', $request->equipo_id);
+                });
+            }
+
+            // Filtro por edad mínima (versión mejorada)
+            if ($request->filled('edad_min')) {
+                $fechaMaxNacimiento = now()->subYears($request->edad_min)->format('Y-m-d');
+                $query->where('fecha_nacimiento', '<=', $fechaMaxNacimiento);
+            }
+
+            // Filtro por edad máxima (versión mejorada)
+            if ($request->filled('edad_max')) {
+                $fechaMinNacimiento = now()->subYears($request->edad_max + 1)->format('Y-m-d');
+                $query->where('fecha_nacimiento', '>=', $fechaMinNacimiento);
+            }
+
+            // Ordenamiento
+            $ordenar = $request->filled('ordenar') ? $request->ordenar : 'created_at';
+            $direccion = $request->filled('direccion') ? $request->direccion : 'desc';
+
+            // Ordenamiento especial para edad
+            if ($ordenar === 'edad') {
+                $query->orderByRaw("TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) {$direccion}");
+            } 
+            // Ordenamiento especial para fecha_nacimiento
+            elseif ($ordenar === 'fecha_nacimiento') {
+                $query->orderBy($ordenar, $direccion);
+            }
+            // Ordenamiento normal para otros campos
+            else {
+                $query->orderBy($ordenar, $direccion);
+            }
+
+            // Contar totales
+            $totalJugadores = Jugador::count();
+            $jugadoresFiltered = $query->count();
+
+            // Paginación
+            $jugadores = $query->paginate(12)->withQueryString();
+
+            return view('admin.jugadores.index', compact(
+                'jugadores', 
+                'equipos', 
+                'ligas', 
+                'categorias', 
+                'totalJugadores', 
+                'jugadoresFiltered'
+            ));
+
+        } catch (\Exception $e) {
+            Log::error('Error en JugadorController@index: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error al cargar el listado de jugadores');
         }
     }

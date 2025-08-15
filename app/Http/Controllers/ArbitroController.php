@@ -17,11 +17,79 @@ class ArbitroController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         Log::info('Accediendo a la lista de árbitros');
-        $arbitros = Arbitro::with('user')->orderBy('created_at', 'desc')->paginate(12);
-        return view('admin.arbitros.index', compact('arbitros'));
+        
+        // Validar parámetros individualmente para evitar el error gte
+        $request->validate([
+            'search' => 'nullable|string|max:255',
+            'estado' => 'nullable|in:0,1',
+            'edad_min' => 'nullable|integer|min:18|max:100',
+            'edad_max' => 'nullable|integer|min:18|max:100',
+            'ordenar' => 'nullable|in:created_at,updated_at,nombre,edad,correo',
+            'direccion' => 'nullable|in:asc,desc'
+        ]);
+        
+        // Obtener parámetros validados
+        $search = $request->input('search');
+        $estado = $request->input('estado');
+        $edadMin = $request->input('edad_min');
+        $edadMax = $request->input('edad_max');
+        $ordenar = $request->input('ordenar', 'created_at');
+        $direccion = $request->input('direccion', 'desc');
+        
+        // Validación manual para edad máxima >= edad mínima
+        if (!empty($edadMin) && !empty($edadMax) && $edadMax < $edadMin) {
+            return redirect()
+                ->route('arbitros.index')
+                ->with('error', 'La edad máxima debe ser mayor o igual a la edad mínima')
+                ->withInput();
+        }
+        
+        // Construir la consulta base
+        $query = Arbitro::with('user');
+        
+        // Aplicar filtros
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('nombre', 'LIKE', '%'.$search.'%')
+                ->orWhere('correo', 'LIKE', '%'.$search.'%')
+                ->orWhere('telefono', 'LIKE', '%'.$search.'%');
+            });
+        }
+        
+        if (!is_null($estado)) {
+            $query->where('activo', (bool)$estado);
+        }
+        
+        if (!empty($edadMin)) {
+            $query->where('edad', '>=', (int)$edadMin);
+        }
+        
+        if (!empty($edadMax)) {
+            $query->where('edad', '<=', (int)$edadMax);
+        }
+        
+        // Asegurar que exista edad para ordenar por ella
+        if ($ordenar === 'edad') {
+            $query->whereNotNull('edad');
+        }
+        
+        // Conteos
+        $totalArbitros = Arbitro::count();
+        $arbitrosFiltered = $query->count();
+        
+        // Paginación con ordenamiento
+        $arbitros = $query->orderBy($ordenar, $direccion)
+                        ->paginate(12)
+                        ->appends($request->query());
+        
+        return view('admin.arbitros.index', compact(
+            'arbitros',
+            'totalArbitros',
+            'arbitrosFiltered'
+        ));
     }
 
     public function store(Request $request)

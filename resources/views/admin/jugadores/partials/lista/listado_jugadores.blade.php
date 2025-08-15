@@ -8,7 +8,14 @@
         <span x-text="showForm ? 'Ocultar Formulario' : 'Registrar Nuevo Jugador'"></span>
     </button>
 </div>
-
+<!-- Incluir el componente de filtros -->
+<x-filtros.jugadores 
+    :total-jugadores="$totalJugadores"
+    :jugadores-filtered="$jugadoresFiltered"
+    :ligas="$ligas"
+    :categorias="$categorias"
+    :equipos="$equipos"
+/>
 <div class="p-6">
     @if($jugadores->isEmpty())
         <div class="text-center py-8 text-gray-400">

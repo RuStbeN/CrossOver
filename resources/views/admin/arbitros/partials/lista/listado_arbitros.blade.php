@@ -8,6 +8,11 @@
         <span x-text="showForm ? 'Ocultar Formulario' : 'Registrar Nuevo Árbitro'"></span>
     </button>
 </div>
+<!-- Incluir el componente de filtros -->
+            <x-filtros.arbitros 
+                :total-arbitros="$totalArbitros"
+                :arbitros-filtered="$arbitros->count()"
+            />
 
 <div class="p-6">
     @if($arbitros->isEmpty())
